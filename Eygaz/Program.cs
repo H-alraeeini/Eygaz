@@ -17,6 +17,16 @@ namespace Eygaz
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
+
+            Func.dbname = Application.StartupPath + @"\EygazDb.db";
+            DatabaseMigrator.EnsureMigrated(Func.dbname);
+
+            using (FrmLogin login = new FrmLogin())
+            {
+                if (login.ShowDialog() != DialogResult.OK)
+                    return;
+            }
+
             Application.Run(new Main());
         }
     }

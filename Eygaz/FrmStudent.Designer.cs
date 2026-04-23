@@ -58,6 +58,8 @@
             this.PnlSrh = new System.Windows.Forms.Panel();
             this.GVShow = new DevExpress.XtraGrid.GridControl();
             this.GrdDtl = new DevExpress.XtraGrid.Views.Grid.GridView();
+            this.ClassId = new System.Windows.Forms.ComboBox();
+            this.lblClassId = new System.Windows.Forms.Label();
             this.PnlBut.SuspendLayout();
             this.PnlData.SuspendLayout();
             this.PnlSrh.SuspendLayout();
@@ -159,6 +161,8 @@
             // PnlData
             // 
             this.PnlData.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.PnlData.Controls.Add(this.ClassId);
+            this.PnlData.Controls.Add(this.lblClassId);
             this.PnlData.Controls.Add(this.Age);
             this.PnlData.Controls.Add(this.lblAge);
             this.PnlData.Controls.Add(this.FullName);
@@ -218,7 +222,7 @@
             // IsActive
             // 
             this.IsActive.AutoSize = true;
-            this.IsActive.Location = new System.Drawing.Point(187, 62);
+            this.IsActive.Location = new System.Drawing.Point(74, 62);
             this.IsActive.Name = "IsActive";
             this.IsActive.Size = new System.Drawing.Size(15, 14);
             this.IsActive.TabIndex = 114;
@@ -228,7 +232,7 @@
             // 
             this.label5.AutoSize = true;
             this.label5.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(43)))), ((int)(((byte)(79)))), ((int)(((byte)(88)))));
-            this.label5.Location = new System.Drawing.Point(221, 62);
+            this.label5.Location = new System.Drawing.Point(108, 62);
             this.label5.Name = "label5";
             this.label5.Size = new System.Drawing.Size(32, 13);
             this.label5.TabIndex = 113;
@@ -414,6 +418,25 @@
             this.GrdDtl.OptionsView.ShowGroupPanel = false;
             this.GrdDtl.FocusedRowChanged += new DevExpress.XtraGrid.Views.Base.FocusedRowChangedEventHandler(this.GrdDtl_FocusedRowChanged);
             // 
+            // ClassId
+            // 
+            this.ClassId.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(192)))), ((int)(((byte)(255)))), ((int)(((byte)(192)))));
+            this.ClassId.FormattingEnabled = true;
+            this.ClassId.Location = new System.Drawing.Point(145, 60);
+            this.ClassId.Name = "ClassId";
+            this.ClassId.Size = new System.Drawing.Size(87, 21);
+            this.ClassId.TabIndex = 117;
+            // 
+            // lblClassId
+            // 
+            this.lblClassId.AutoSize = true;
+            this.lblClassId.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(43)))), ((int)(((byte)(79)))), ((int)(((byte)(88)))));
+            this.lblClassId.Location = new System.Drawing.Point(237, 66);
+            this.lblClassId.Name = "lblClassId";
+            this.lblClassId.Size = new System.Drawing.Size(36, 13);
+            this.lblClassId.TabIndex = 118;
+            this.lblClassId.Text = "الفصل";
+            // 
             // FrmStudent
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -468,6 +491,8 @@
         private System.Windows.Forms.TextBox FullName;
         private System.Windows.Forms.Label lblAge;
         private System.Windows.Forms.TextBox Age;
+        private System.Windows.Forms.ComboBox ClassId;
+        private System.Windows.Forms.Label lblClassId;
     }
 }
 

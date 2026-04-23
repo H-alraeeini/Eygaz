@@ -32,7 +32,7 @@ namespace Eygaz
             try
             {
                 // تعبئة الفصول
-                f.DataCombo(CmbClass, "Classes", "ClassName", "Id", " WHERE IsActive = 1 ORDER BY ClassName");
+                f.DataCombo(CmbClass, "Classes", "ClassName", "Id", " WHERE IsActive = 0 ORDER BY ClassName");
 
                 // أنواع الشهادات
                 CmbCertType.Items.Clear();
@@ -69,7 +69,7 @@ namespace Eygaz
                 {
                     int classId = Convert.ToInt32(CmbClass.SelectedValue);
                     f.DataCombo(CmbStudent, "Students", "FullName", "Id",
-                        $" WHERE ClassId = {classId} AND IsActive = 1 ORDER BY FullName");
+                        $" WHERE ClassId = {classId} AND IsActive = 0 ORDER BY FullName");
                 }
             }
             catch { }

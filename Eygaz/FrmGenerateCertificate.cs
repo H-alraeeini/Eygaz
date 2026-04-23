@@ -35,7 +35,7 @@ namespace Eygaz
         {
             try
             {
-                f.DataCombo(CmbClass, "Classes", "ClassName", "Id", " WHERE IsActive = 1 ORDER BY ClassName");
+                f.DataCombo(CmbClass, "Classes", "ClassName", "Id", " WHERE IsActive = 0 ORDER BY ClassName");
                 LoadTemplates();
 
                 BtnPreview.Enabled = false;
@@ -78,7 +78,7 @@ namespace Eygaz
                 {
                     int classId = Convert.ToInt32(CmbClass.SelectedValue);
                     f.DataCombo(CmbStudent, "Students", "FullName", "Id",
-                        $" WHERE ClassId = {classId} AND IsActive = 1 ORDER BY FullName");
+                        $" WHERE ClassId = {classId} AND IsActive = 0 ORDER BY FullName");
                 }
             }
             catch { }

@@ -164,9 +164,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AttendanceHelper.cs" />
+    <Compile Include="AuthService.cs" />
+    <Compile Include="AuthSession.cs" />
     <Compile Include="CertificatePrintDocument.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="DatabaseMigrator.cs" />
     <Compile Include="FrmAbsenceTracking.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -189,11 +192,23 @@
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="FrmCertificateDesigner.Designer.cs" />
+    <Compile Include="FrmChangePassword.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="FrmChangePassword.Designer.cs">
+      <DependentUpon>FrmChangePassword.cs</DependentUpon>
+    </Compile>
     <Compile Include="FrmClassess.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="FrmClassess.Designer.cs">
       <DependentUpon>FrmClassess.cs</DependentUpon>
+    </Compile>
+    <Compile Include="FrmComprehensiveGradeReport.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="FrmComprehensiveGradeReport.Designer.cs">
+      <DependentUpon>FrmComprehensiveGradeReport.cs</DependentUpon>
     </Compile>
     <Compile Include="FrmDashboard.cs">
       <SubType>Form</SubType>
@@ -203,6 +218,24 @@
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="FrmGenerateCertificate.Designer.cs" />
+    <Compile Include="FrmGradeEntry.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="FrmGradeEntry.Designer.cs">
+      <DependentUpon>FrmGradeEntry.cs</DependentUpon>
+    </Compile>
+    <Compile Include="FrmGradeReport.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="FrmGradeReport.Designer.cs">
+      <DependentUpon>FrmGradeReport.cs</DependentUpon>
+    </Compile>
+    <Compile Include="FrmPermissionsManagement.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="FrmPermissionsManagement.Designer.cs">
+      <DependentUpon>FrmPermissionsManagement.cs</DependentUpon>
+    </Compile>
     <Compile Include="FrmStudent.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -234,6 +267,12 @@
     </Compile>
     <Compile Include="FrmTeachers.Designer.cs">
       <DependentUpon>FrmTeachers.cs</DependentUpon>
+    </Compile>
+    <Compile Include="FrmUserManagement.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="FrmUserManagement.Designer.cs">
+      <DependentUpon>FrmUserManagement.cs</DependentUpon>
     </Compile>
     <Compile Include="Func.cs" />
     <Compile Include="Main.cs">
@@ -300,7 +339,23 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Database\Migrations\006_auth_and_permissions.sql" />
     <Content Include="MetroFramework.txt" />
+    <None Include="Database\Migrations\001_initial.sql">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Database\Migrations\002_attendance.sql">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Database\Migrations\003_certificates.sql">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Database\Migrations\004_grades.sql">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Database\Migrations\005_examresults_lastsurah.sql">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\System.ValueTuple.4.6.1\build\net471\System.ValueTuple.targets" Condition="Exists('..\packages\System.ValueTuple.4.6.1\build\net471\System.ValueTuple.targets')" />

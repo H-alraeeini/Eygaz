@@ -28,7 +28,7 @@ namespace Eygaz
                 CmbReportType.SelectedIndex = 0;
 
                 // الفصول
-                f.DataComboWithNull(CmbClass, "Classes", "ClassName", "Id", " WHERE IsActive = 1 ORDER BY ClassName");
+                f.DataComboWithNull(CmbClass, "Classes", "ClassName", "Id", " WHERE IsActive = 0 ORDER BY ClassName");
 
                 // الأشهر
                 CmbMonth.Items.Clear();
@@ -99,7 +99,7 @@ namespace Eygaz
                 {
                     int classId = Convert.ToInt32(CmbClass.SelectedValue);
                     f.DataCombo(CmbStudent, "Students", "FullName", "Id",
-                        $" WHERE ClassId = {classId} AND IsActive = 1 ORDER BY FullName");
+                        $" WHERE ClassId = {classId} AND IsActive = 0 ORDER BY FullName");
                 }
             }
             catch { }

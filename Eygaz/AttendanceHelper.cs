@@ -2,6 +2,7 @@ using System;
 using System.Data;
 using System.Data.SQLite;
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows.Forms;
 
 namespace Eygaz
@@ -21,7 +22,7 @@ namespace Eygaz
             string sql = $@"
                 SELECT Id, FullName, ClassId
                 FROM Students
-                WHERE ClassId = {classId} AND IsActive = 1
+                WHERE ClassId = {classId} AND IsActive = 0
                 ORDER BY FullName";
             return f.GetData(sql);
         }
@@ -52,7 +53,7 @@ namespace Eygaz
             if (result != "DONE...")
                 return -1;
 
-            string idStr = f.GetScalar("SELECT last_insert_rowid()");
+            string idStr = f.GetScalar($@"SELECT max(id) from AttendanceSessions where ClassId = {classId} and  SubjectId = {subjectId} and SessionDate = '{sessionDate}' and TeacherId={teacherId}");
             return string.IsNullOrEmpty(idStr) ? -1 : int.Parse(idStr);
         }
 
@@ -403,13 +404,13 @@ namespace Eygaz
         // =============================================
         public int GetTotalStudents()
         {
-            string val = f.GetScalar("SELECT COUNT(*) FROM Students WHERE IsActive = 1");
+            string val = f.GetScalar("SELECT COUNT(*) FROM Students WHERE IsActive = 0");
             return string.IsNullOrEmpty(val) ? 0 : int.Parse(val);
         }
 
         public int GetTotalTeachers()
         {
-            string val = f.GetScalar("SELECT COUNT(*) FROM Teachers WHERE IsActive = 1");
+            string val = f.GetScalar("SELECT COUNT(*) FROM Teachers WHERE IsActive = 0");
             return string.IsNullOrEmpty(val) ? 0 : int.Parse(val);
         }
 
@@ -448,13 +449,13 @@ namespace Eygaz
 
         public int GetTotalClasses()
         {
-            string val = f.GetScalar("SELECT COUNT(*) FROM Classes WHERE IsActive = 1");
+            string val = f.GetScalar("SELECT COUNT(*) FROM Classes WHERE IsActive = 0");
             return string.IsNullOrEmpty(val) ? 0 : int.Parse(val);
         }
 
         public int GetTotalSubjects()
         {
-            string val = f.GetScalar("SELECT COUNT(*) FROM Subjects WHERE IsActive = 1");
+            string val = f.GetScalar("SELECT COUNT(*) FROM Subjects WHERE IsActive = 0");
             return string.IsNullOrEmpty(val) ? 0 : int.Parse(val);
         }
 
@@ -646,7 +647,7 @@ namespace Eygaz
         // =============================================
         public DataTable GetAllTeachers()
         {
-            string sql = "SELECT Id, FullName, Phone FROM Teachers WHERE IsActive = 1 ORDER BY FullName";
+            string sql = "SELECT Id, FullName, Phone FROM Teachers WHERE IsActive = 0 ORDER BY FullName";
             return f.GetData(sql);
         }
 
@@ -716,7 +717,7 @@ namespace Eygaz
                 FROM Teachers t
                 LEFT JOIN TeacherAttendance ta ON t.Id = ta.TeacherId AND ta.AttendanceDate = '{date}'
                 LEFT JOIN AttendanceStatus ast ON ta.StatusId = ast.Id
-                WHERE t.IsActive = 1
+                WHERE t.IsActive = 0
                 ORDER BY t.FullName";
             return f.GetData(sql);
         }
@@ -862,7 +863,7 @@ namespace Eygaz
                 SELECT s.Id, s.FullName, c.ClassName, s.ClassId
                 FROM Students s
                 INNER JOIN Classes c ON s.ClassId = c.Id
-                WHERE s.IsActive = 1
+                WHERE s.IsActive = 0
                 ORDER BY c.ClassName, s.FullName";
             return f.GetData(sql);
         }
@@ -875,7 +876,7 @@ namespace Eygaz
             string sql = $@"
                 SELECT Id, FullName
                 FROM Students
-                WHERE ClassId = {classId} AND IsActive = 1
+                WHERE ClassId = {classId} AND IsActive = 0
                 ORDER BY FullName";
             return f.GetData(sql);
         }
@@ -952,6 +953,600 @@ namespace Eygaz
                 }
             }
             return dt;
+        }
+
+        // =============================================
+        // 45. إضافة اختبار جديد
+        // =============================================
+        public int CreateExam(int subjectId, int classId, string term, string examDate, double maxScore, string description)
+        {
+            string sql = @"
+                INSERT INTO Exams (SubjectId, ClassId, Term, ExamDate, MaxScore, Description)
+                VALUES (@subjectId, @classId, @term, @examDate, @maxScore, @description);";
+
+            var parameters = new Dictionary<string, object>
+            {
+                { "@subjectId", subjectId },
+                { "@classId", classId },
+                { "@term", term },
+                { "@examDate", examDate },
+                { "@maxScore", maxScore },
+                { "@description", description ?? "" }
+            };
+
+            int rows = f.ExecuteNonQuery(sql, parameters);
+            if (rows <= 0) return -1;
+
+            string idStr = f.GetScalar($@"SELECT max(id) from Exams where ClassId = {classId} and  SubjectId = {subjectId}  and term='{term}'");
+
+            return string.IsNullOrEmpty(idStr) ? -1 : int.Parse(idStr);
+        }
+
+        // =============================================
+        // 46. إدخال/تحديث درجة طالب في اختبار
+        // =============================================
+        public bool SaveExamResult(int examId, int studentId, double score, string notes = "")
+        {
+            string sql = @"
+                INSERT INTO ExamResults (ExamId, StudentId, Score, Notes)
+                VALUES (@examId, @studentId, @score, @notes)
+                ON CONFLICT(ExamId, StudentId)
+                DO UPDATE SET Score = excluded.Score, Notes = excluded.Notes;";
+
+            var parameters = new Dictionary<string, object>
+            {
+                { "@examId", examId },
+                { "@studentId", studentId },
+                { "@score", score },
+                { "@notes", notes ?? "" }
+            };
+
+            return f.ExecuteNonQuery(sql, parameters) >= 0;
+        }
+
+        // =============================================
+        // 47. حذف درجة
+        // =============================================
+        public bool DeleteExamResult(int examId, int studentId)
+        {
+            string sql = "DELETE FROM ExamResults WHERE ExamId = @examId AND StudentId = @studentId;";
+            var parameters = new Dictionary<string, object>
+            {
+                { "@examId", examId },
+                { "@studentId", studentId }
+            };
+            return f.ExecuteNonQuery(sql, parameters) >= 0;
+        }
+
+        // =============================================
+        // 48. تقرير كشف الدرجات
+        // =============================================
+        public DataTable GetGradeReport(int classId, string term, int studentId = 0, int subjectId = 0)
+        {
+            string sql = @"
+                SELECT
+                    s.Id AS StudentId,
+                    s.FullName AS 'اسم الطالب',
+                    sub.SubjectName AS 'المادة',
+                    e.Term AS 'الترم',
+                    e.ExamDate AS 'تاريخ الاختبار',
+                    er.Score AS 'الدرجة',
+                    e.MaxScore AS 'الدرجة العظمى',
+                    ROUND((er.Score * 100.0) / e.MaxScore, 1) AS 'النسبة',
+                    CASE
+                        WHEN (er.Score * 100.0 / e.MaxScore) >= 90 THEN 'ممتاز (A)'
+                        WHEN (er.Score * 100.0 / e.MaxScore) >= 80 THEN 'جيد جداً (B)'
+                        WHEN (er.Score * 100.0 / e.MaxScore) >= 70 THEN 'جيد (C)'
+                        WHEN (er.Score * 100.0 / e.MaxScore) >= 60 THEN 'مقبول (D)'
+                        ELSE 'راسب (F)'
+                    END AS 'التقدير'
+                FROM ExamResults er
+                INNER JOIN Exams e ON e.Id = er.ExamId
+                INNER JOIN Students s ON s.Id = er.StudentId
+                INNER JOIN Subjects sub ON sub.Id = e.SubjectId
+                WHERE e.ClassId = @classId
+                  AND e.Term = @term
+                  AND (@studentId = 0 OR s.Id = @studentId)
+                  AND (@subjectId = 0 OR sub.Id = @subjectId)
+                ORDER BY s.FullName, e.ExamDate;";
+
+            var parameters = new Dictionary<string, object>
+            {
+                { "@classId", classId },
+                { "@term", term ?? "" },
+                { "@studentId", studentId },
+                { "@subjectId", subjectId }
+            };
+            return f.GetData(sql, parameters);
+        }
+
+        // =============================================
+        // 49. ملخص كشف الدرجات
+        // =============================================
+        public DataTable GetGradeSummary(int classId, string term, int studentId = 0, int subjectId = 0)
+        {
+            string sql = @"
+                SELECT
+                    ROUND(AVG((er.Score * 100.0) / e.MaxScore), 1) AS AveragePercent,
+                    ROUND(MAX((er.Score * 100.0) / e.MaxScore), 1) AS TopPercent,
+                    ROUND(MIN((er.Score * 100.0) / e.MaxScore), 1) AS LowestPercent,
+                    SUM(CASE WHEN ((er.Score * 100.0) / e.MaxScore) >= 60 THEN 1 ELSE 0 END) AS PassedCount,
+                    SUM(CASE WHEN ((er.Score * 100.0) / e.MaxScore) < 60 THEN 1 ELSE 0 END) AS FailedCount
+                FROM ExamResults er
+                INNER JOIN Exams e ON e.Id = er.ExamId
+                INNER JOIN Students s ON s.Id = er.StudentId
+                WHERE e.ClassId = @classId
+                  AND e.Term = @term
+                  AND (@studentId = 0 OR s.Id = @studentId)
+                  AND (@subjectId = 0 OR e.SubjectId = @subjectId);";
+
+            var parameters = new Dictionary<string, object>
+            {
+                { "@classId", classId },
+                { "@term", term ?? "" },
+                { "@studentId", studentId },
+                { "@subjectId", subjectId }
+            };
+            return f.GetData(sql, parameters);
+        }
+
+        // =============================================
+        // 50. كشف درجات شامل (أعمدة ثابتة + آخر سورة)
+        // =============================================
+        public DataTable GetComprehensiveGradeSheetRaw(int classId, string term, string studentName)
+        {
+            string sql = @"
+                SELECT
+                    s.Id AS StudentId,
+                    s.FullName AS StudentName,
+                    sub.SubjectName AS SubjectName,
+                    e.MaxScore AS MaxScore,
+                    er.Score AS Score,
+                    er.LastSurah AS LastSurah
+                FROM Students s
+                LEFT JOIN Exams e ON e.ClassId = @classId AND e.Term = @term
+                LEFT JOIN ExamResults er ON er.ExamId = e.Id AND er.StudentId = s.Id
+                LEFT JOIN Subjects sub ON sub.Id = e.SubjectId
+                WHERE s.ClassId = @classId
+                  AND s.IsActive = 0
+                  AND (@studentName = '' OR s.FullName LIKE '%' || @studentName || '%')
+                ORDER BY s.FullName, sub.SubjectName;";
+
+            var parameters = new Dictionary<string, object>
+            {
+                { "@classId", classId },
+                { "@term", term ?? "" },
+                { "@studentName", studentName ?? "" }
+            };
+
+            return f.GetData(sql, parameters);
+        }
+
+        public bool SaveExamResultWithLastSurah(int examId, int studentId, double score, string notes, string lastSurah)
+        {
+            string sql = @"
+                INSERT INTO ExamResults (ExamId, StudentId, Score, Notes, LastSurah)
+                VALUES (@examId, @studentId, @score, @notes, @lastSurah)
+                ON CONFLICT(ExamId, StudentId)
+                DO UPDATE SET
+                    Score = excluded.Score,
+                    Notes = excluded.Notes,
+                    LastSurah = excluded.LastSurah;";
+
+            var parameters = new Dictionary<string, object>
+            {
+                { "@examId", examId },
+                { "@studentId", studentId },
+                { "@score", score },
+                { "@notes", notes ?? "" },
+                { "@lastSurah", lastSurah ?? "" }
+            };
+
+            return f.ExecuteNonQuery(sql, parameters) >= 0;
+        }
+
+        public int GetExamId(int classId, int subjectId, string term)
+        {
+            string sql = @"
+                SELECT Id
+                FROM Exams
+                WHERE ClassId = @classId AND SubjectId = @subjectId AND Term = @term
+                ORDER BY ExamDate DESC, Id DESC
+                LIMIT 1;";
+
+            string id = f.GetScalar(sql, new Dictionary<string, object>
+            {
+                { "@classId", classId },
+                { "@subjectId", subjectId },
+                { "@term", term ?? "" }
+            });
+
+            return string.IsNullOrWhiteSpace(id) ? 0 : Convert.ToInt32(id);
+        }
+
+        public double GetExamMaxScore(int examId)
+        {
+            string score = f.GetScalar("SELECT MaxScore FROM Exams WHERE Id = @id;", new Dictionary<string, object> { { "@id", examId } });
+            return string.IsNullOrWhiteSpace(score) ? 100 : Convert.ToDouble(score);
+        }
+
+        public DataTable GetGradeEntryRows(int classId, int subjectId, string term)
+        {
+            string sql = @"
+                SELECT
+                    s.Id AS StudentId,
+                    s.FullName AS StudentName,
+                    er.Id AS ResultId,
+                    e.Id AS ExamId,
+                    er.Score AS Score,
+                    er.LastSurah AS LastSurah,
+                    er.Notes AS Notes
+                FROM Students s
+                LEFT JOIN Exams e
+                    ON e.Id = (
+                        SELECT Id
+                        FROM Exams
+                        WHERE ClassId = @classId
+                          AND SubjectId = @subjectId
+                          AND Term = @term
+                        ORDER BY ExamDate DESC, Id DESC
+                        LIMIT 1
+                    )
+                LEFT JOIN ExamResults er
+                    ON er.StudentId = s.Id
+                   AND er.ExamId = e.Id
+                WHERE s.ClassId = @classId
+                  AND s.IsActive = 0
+                ORDER BY s.FullName;";
+
+            return f.GetData(sql, new Dictionary<string, object>
+            {
+                { "@classId", classId },
+                { "@subjectId", subjectId },
+                { "@term", term ?? "" }
+            });
+        }
+
+        public DataTable GetGradeEntryMatrix(int classId, string term)
+        {
+            DataTable students = f.GetData(@"
+                SELECT Id AS StudentId, FullName AS StudentName
+                FROM Students
+                WHERE ClassId = @classId AND IsActive = 0
+                ORDER BY FullName;",
+                new Dictionary<string, object> { { "@classId", classId } });
+
+            DataTable subjects = f.GetData(@"
+                SELECT Id AS SubjectId, SubjectName
+                FROM Subjects
+                WHERE IsActive = 0
+                ORDER BY SubjectName;");
+
+            DataTable results = f.GetData(@"
+                SELECT er.StudentId, e.SubjectId, er.Score, er.LastSurah
+                FROM ExamResults er
+                INNER JOIN Exams e ON e.Id = er.ExamId
+                WHERE e.ClassId = @classId
+                  AND e.Term = @term;",
+                new Dictionary<string, object>
+                {
+                    { "@classId", classId },
+                    { "@term", term ?? "" }
+                });
+
+            DataTable matrix = new DataTable();
+            matrix.Columns.Add("StudentId", typeof(int));
+            matrix.Columns.Add("StudentName", typeof(string));
+            matrix.Columns.Add("LastSurah", typeof(string));
+
+            var subjectIds = new List<int>();
+            if (subjects != null)
+            {
+                foreach (DataRow subject in subjects.Rows)
+                {
+                    int subjectId = Convert.ToInt32(subject["SubjectId"]);
+                    string subjectName = subject["SubjectName"] == DBNull.Value ? "" : subject["SubjectName"].ToString();
+                    string colName = GetSubjectScoreColumnName(subjectId);
+
+                    DataColumn col = matrix.Columns.Add(colName, typeof(double));
+                    col.Caption = subjectName;
+                    subjectIds.Add(subjectId);
+                }
+            }
+
+            var resultMap = new Dictionary<string, DataRow>();
+            if (results != null)
+            {
+                foreach (DataRow row in results.Rows)
+                {
+                    int studentId = Convert.ToInt32(row["StudentId"]);
+                    int subjectId = Convert.ToInt32(row["SubjectId"]);
+                    resultMap[$"{studentId}_{subjectId}"] = row;
+                }
+            }
+
+            int preferredLastSurahSubjectId = GetPreferredLastSurahSubjectId(classId, term);
+
+            if (students != null)
+            {
+                foreach (DataRow student in students.Rows)
+                {
+                    int studentId = Convert.ToInt32(student["StudentId"]);
+                    DataRow newRow = matrix.NewRow();
+                    newRow["StudentId"] = studentId;
+                    newRow["StudentName"] = student["StudentName"] == DBNull.Value ? "" : student["StudentName"].ToString();
+                    newRow["LastSurah"] = "";
+
+                    string fallbackLastSurah = "";
+                    foreach (int subjectId in subjectIds)
+                    {
+                        string key = $"{studentId}_{subjectId}";
+                        string colName = GetSubjectScoreColumnName(subjectId);
+                        if (!resultMap.ContainsKey(key))
+                        {
+                            newRow[colName] = DBNull.Value;
+                            continue;
+                        }
+
+                        DataRow result = resultMap[key];
+                        newRow[colName] = result["Score"] == DBNull.Value ? (object)DBNull.Value : Convert.ToDouble(result["Score"]);
+
+                        if (result["LastSurah"] != DBNull.Value)
+                        {
+                            string surah = result["LastSurah"].ToString();
+                            if (!string.IsNullOrWhiteSpace(surah))
+                            {
+                                if (subjectId == preferredLastSurahSubjectId)
+                                    newRow["LastSurah"] = surah;
+                                else if (string.IsNullOrWhiteSpace(fallbackLastSurah))
+                                    fallbackLastSurah = surah;
+                            }
+                        }
+                    }
+
+                    if (string.IsNullOrWhiteSpace(newRow["LastSurah"] == DBNull.Value ? "" : newRow["LastSurah"].ToString()) &&
+                        !string.IsNullOrWhiteSpace(fallbackLastSurah))
+                    {
+                        newRow["LastSurah"] = fallbackLastSurah;
+                    }
+
+                    matrix.Rows.Add(newRow);
+                }
+            }
+
+            return matrix;
+        }
+
+        public int GetPreferredLastSurahSubjectId(int classId, string term)
+        {
+            string fromSaved = f.GetScalar(@"
+                SELECT e.SubjectId
+                FROM ExamResults er
+                INNER JOIN Exams e ON e.Id = er.ExamId
+                WHERE e.ClassId = @classId
+                  AND e.Term = @term
+                  AND er.LastSurah IS NOT NULL
+                  AND TRIM(er.LastSurah) <> ''
+                ORDER BY e.ExamDate DESC, e.Id DESC
+                LIMIT 1;",
+                new Dictionary<string, object>
+                {
+                    { "@classId", classId },
+                    { "@term", term ?? "" }
+                });
+
+            if (!string.IsNullOrWhiteSpace(fromSaved))
+                return Convert.ToInt32(fromSaved);
+
+            string byName = f.GetScalar(@"
+                SELECT Id
+                FROM Subjects
+                WHERE IsActive = 0
+                  AND SubjectName LIKE @namePattern
+                ORDER BY Id
+                LIMIT 1;",
+                new Dictionary<string, object> { { "@namePattern", "%حفظ%" } });
+
+            if (!string.IsNullOrWhiteSpace(byName))
+                return Convert.ToInt32(byName);
+
+            string firstSubject = f.GetScalar(@"
+                SELECT Id
+                FROM Subjects
+                WHERE IsActive = 0
+                ORDER BY SubjectName, Id
+                LIMIT 1;");
+
+            return string.IsNullOrWhiteSpace(firstSubject) ? 0 : Convert.ToInt32(firstSubject);
+        }
+
+        public bool SaveGradeEntryMatrix(
+            int classId,
+            string term,
+            DataTable matrixRows,
+            Dictionary<string, int> subjectColumns,
+            int? lastSurahSubjectId,
+            string examDate,
+            double maxScore,
+            string description,
+            out string errorMessage)
+        {
+            errorMessage = "";
+            if (matrixRows == null)
+            {
+                errorMessage = "لا توجد بيانات للحفظ.";
+                return false;
+            }
+
+            if (subjectColumns == null || subjectColumns.Count == 0)
+            {
+                errorMessage = "لا توجد مواد للحفظ.";
+                return false;
+            }
+
+            using (var cn = new SQLiteConnection(@"Data Source=" + Func.dbname))
+            {
+                cn.Open();
+                using (var tx = cn.BeginTransaction())
+                {
+                    try
+                    {
+                        var examIdsBySubject = new Dictionary<int, int>();
+                        foreach (int subjectId in subjectColumns.Values.Distinct())
+                        {
+                            int examId = GetExamId(classId, subjectId, term);
+                            if (examId <= 0)
+                            {
+                                examId = CreateExam(subjectId, classId, term, examDate, maxScore, description);
+                            }
+
+                            if (examId <= 0)
+                            {
+                                errorMessage = "تعذر إنشاء اختبار لإحدى المواد.";
+                                tx.Rollback();
+                                return false;
+                            }
+
+                            examIdsBySubject[subjectId] = examId;
+                        }
+
+                        foreach (DataRow row in matrixRows.Rows)
+                        {
+                            int studentId = Convert.ToInt32(row["StudentId"]);
+                            string lastSurah = row["LastSurah"] == DBNull.Value ? "" : row["LastSurah"].ToString().Trim();
+
+                            foreach (var entry in subjectColumns)
+                            {
+                                string colName = entry.Key;
+                                int subjectId = entry.Value;
+                                int examId = examIdsBySubject[subjectId];
+                                object scoreObj = row[colName];
+                                bool scoreEmpty = scoreObj == DBNull.Value || string.IsNullOrWhiteSpace(scoreObj.ToString());
+
+                                bool assignLastSurah = lastSurahSubjectId.HasValue &&
+                                                       lastSurahSubjectId.Value > 0 &&
+                                                       subjectId == lastSurahSubjectId.Value;
+                                bool lastSurahEmpty = string.IsNullOrWhiteSpace(lastSurah);
+
+                                if (scoreEmpty && (!assignLastSurah || lastSurahEmpty))
+                                    continue;
+
+                                using (var cmd = new SQLiteCommand(@"
+                                    INSERT INTO ExamResults (ExamId, StudentId, Score, LastSurah, Notes)
+                                    VALUES (@examId, @studentId, @score, @lastSurah, @notes)
+                                    ON CONFLICT(ExamId, StudentId)
+                                    DO UPDATE SET
+                                        Score = excluded.Score,
+                                        LastSurah = excluded.LastSurah,
+                                        Notes = excluded.Notes;", cn, tx))
+                                {
+                                    cmd.Parameters.AddWithValue("@examId", examId);
+                                    cmd.Parameters.AddWithValue("@studentId", studentId);
+                                    cmd.Parameters.AddWithValue("@score", scoreEmpty ? (object)DBNull.Value : Convert.ToDouble(scoreObj));
+                                    cmd.Parameters.AddWithValue("@lastSurah",
+                                        assignLastSurah && !lastSurahEmpty ? (object)lastSurah : DBNull.Value);
+                                    cmd.Parameters.AddWithValue("@notes", DBNull.Value);
+                                    cmd.ExecuteNonQuery();
+                                }
+                            }
+                        }
+
+                        tx.Commit();
+                        return true;
+                    }
+                    catch (Exception ex)
+                    {
+                        tx.Rollback();
+                        errorMessage = ex.Message;
+                        return false;
+                    }
+                }
+            }
+        }
+
+        public string GetSubjectScoreColumnName(int subjectId)
+        {
+            return "Sub_" + subjectId;
+        }
+
+        public bool SaveGradeEntryUpsert(int examId, DataTable gradeRows, out string errorMessage)
+        {
+            errorMessage = "";
+            if (examId <= 0)
+            {
+                errorMessage = "ExamId غير صالح.";
+                return false;
+            }
+
+            using (var cn = new SQLiteConnection(@"Data Source=" + Func.dbname))
+            {
+                cn.Open();
+                using (var tx = cn.BeginTransaction())
+                {
+                    try
+                    {
+                        foreach (DataRow row in gradeRows.Rows)
+                        {
+                            int studentId = Convert.ToInt32(row["StudentId"]);
+                            object resultIdObj = row["ResultId"];
+                            object scoreObj = row["Score"];
+                            string lastSurah = row["LastSurah"] == DBNull.Value ? "" : row["LastSurah"].ToString();
+                            string notes = row["Notes"] == DBNull.Value ? "" : row["Notes"].ToString();
+
+                            bool scoreEmpty = scoreObj == DBNull.Value || string.IsNullOrWhiteSpace(scoreObj.ToString());
+                            bool lastSurahEmpty = string.IsNullOrWhiteSpace(lastSurah);
+                            bool notesEmpty = string.IsNullOrWhiteSpace(notes);
+                            if (scoreEmpty && lastSurahEmpty && notesEmpty)
+                                continue;
+
+                            if (resultIdObj != DBNull.Value && !string.IsNullOrWhiteSpace(resultIdObj.ToString()))
+                            {
+                                using (var cmd = new SQLiteCommand(@"
+                                    UPDATE ExamResults
+                                    SET Score = @score,
+                                        LastSurah = @lastSurah,
+                                        Notes = @notes
+                                    WHERE Id = @resultId;", cn, tx))
+                                {
+                                    cmd.Parameters.AddWithValue("@score", scoreEmpty ? (object)DBNull.Value : Convert.ToDouble(scoreObj));
+                                    cmd.Parameters.AddWithValue("@lastSurah", string.IsNullOrWhiteSpace(lastSurah) ? (object)DBNull.Value : lastSurah);
+                                    cmd.Parameters.AddWithValue("@notes", string.IsNullOrWhiteSpace(notes) ? (object)DBNull.Value : notes);
+                                    cmd.Parameters.AddWithValue("@resultId", Convert.ToInt32(resultIdObj));
+                                    cmd.ExecuteNonQuery();
+                                }
+                            }
+                            else
+                            {
+                                using (var cmd = new SQLiteCommand(@"
+                                    INSERT INTO ExamResults (ExamId, StudentId, Score, LastSurah, Notes)
+                                    VALUES (@examId, @studentId, @score, @lastSurah, @notes)
+                                    ON CONFLICT(ExamId, StudentId)
+                                    DO UPDATE SET
+                                        Score = excluded.Score,
+                                        LastSurah = excluded.LastSurah,
+                                        Notes = excluded.Notes;", cn, tx))
+                                {
+                                    cmd.Parameters.AddWithValue("@examId", examId);
+                                    cmd.Parameters.AddWithValue("@studentId", studentId);
+                                    cmd.Parameters.AddWithValue("@score", scoreEmpty ? (object)DBNull.Value : Convert.ToDouble(scoreObj));
+                                    cmd.Parameters.AddWithValue("@lastSurah", string.IsNullOrWhiteSpace(lastSurah) ? (object)DBNull.Value : lastSurah);
+                                    cmd.Parameters.AddWithValue("@notes", string.IsNullOrWhiteSpace(notes) ? (object)DBNull.Value : notes);
+                                    cmd.ExecuteNonQuery();
+                                }
+                            }
+                        }
+
+                        tx.Commit();
+                        return true;
+                    }
+                    catch (Exception ex)
+                    {
+                        tx.Rollback();
+                        errorMessage = ex.Message;
+                        return false;
+                    }
+                }
+            }
         }
     }
 }

@@ -95,6 +95,87 @@ namespace Eygaz
             }
             return null;
         }
+
+        public DataTable GetData(string sql, Dictionary<string, object> parameters)
+        {
+            cn = new SQLiteConnection(@"Data Source=" + dbname + "");
+            DataTable table = new DataTable();
+            try
+            {
+                cn.Open();
+                using (SQLiteCommand localCmd = new SQLiteCommand(sql, cn))
+                {
+                    AddParameters(localCmd, parameters);
+                    using (SQLiteDataAdapter da = new SQLiteDataAdapter(localCmd))
+                    {
+                        da.Fill(table);
+                    }
+                }
+                return table;
+            }
+            catch
+            {
+                return null;
+            }
+            finally
+            {
+                cn.Close();
+            }
+        }
+
+        public string GetScalar(string sql, Dictionary<string, object> parameters)
+        {
+            cn = new SQLiteConnection(@"Data Source=" + dbname + "");
+            try
+            {
+                cn.Open();
+                using (SQLiteCommand localCmd = new SQLiteCommand(sql, cn))
+                {
+                    AddParameters(localCmd, parameters);
+                    object value = localCmd.ExecuteScalar();
+                    return value == null || value == DBNull.Value ? "" : value.ToString();
+                }
+            }
+            catch
+            {
+                return "";
+            }
+            finally
+            {
+                cn.Close();
+            }
+        }
+
+        public int ExecuteNonQuery(string sql, Dictionary<string, object> parameters)
+        {
+            cn = new SQLiteConnection(@"Data Source=" + dbname + "");
+            try
+            {
+                cn.Open();
+                using (SQLiteCommand localCmd = new SQLiteCommand(sql, cn))
+                {
+                    AddParameters(localCmd, parameters);
+                    return localCmd.ExecuteNonQuery();
+                }
+            }
+            catch
+            {
+                return -1;
+            }
+            finally
+            {
+                cn.Close();
+            }
+        }
+
+        private static void AddParameters(SQLiteCommand command, Dictionary<string, object> parameters)
+        {
+            if (parameters == null) return;
+            foreach (var kv in parameters)
+            {
+                command.Parameters.AddWithValue(kv.Key, kv.Value ?? DBNull.Value);
+            }
+        }
         public void DataCombo(ComboBox DDL, string TABLE_NAME, string Col_Name, string Col_Value, string WHR)
         {
             try

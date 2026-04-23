@@ -18,7 +18,7 @@ namespace Eygaz
         {
             try
             {
-                f.DataComboWithNull(CmbClass, "Classes", "ClassName", "Id", " WHERE IsActive = 1 ORDER BY ClassName");
+                f.DataComboWithNull(CmbClass, "Classes", "ClassName", "Id", " WHERE IsActive = 0 ORDER BY ClassName");
 
                 DtFrom.Value = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
                 DtTo.Value = DateTime.Today;

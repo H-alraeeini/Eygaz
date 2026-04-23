@@ -34,6 +34,7 @@ namespace Eygaz
         private TextBox TxtAge = new TextBox();
         private DateTimePicker TxtBirthDate = new DateTimePicker();
         private ComboBox GenderDDL = new ComboBox();
+        private ComboBox ClassIdDDL = new ComboBox();
         private DateTimePicker TxtCreatedAt = new DateTimePicker();
         private CheckBox ChkIsActive = new CheckBox();
         public FrmStudent()
@@ -65,6 +66,7 @@ namespace Eygaz
 
             FullName.Focus();
             f.DataCombo(Gender, "Flags", "FlagName", "FlagCode", " where FlagType=1 order by FlagCode desc");
+            f.DataCombo(ClassId, "Classes", "ClassName", "Id", " where IsActive=0 order by Id ");
 
         }
         private void clearCntrl()
@@ -97,7 +99,8 @@ namespace Eygaz
                     //  "EnrollmentDate"+
                     "IsActive, " +
                     "Notes, " +
-                    "CreatedAt " +
+                    "CreatedAt, " +
+                    "ClassId " +
                   "FROM " + Tbl + " ORDER BY " + Pky + "";
 
             // ربط الحقول
@@ -109,7 +112,7 @@ namespace Eygaz
             TxtPhone = Phone;
             GenderDDL = Gender;
             ChkIsActive = IsActive;
-
+            ClassIdDDL = ClassId;
             TxtNotes = Notes;
 
             GrdDtl.OptionsBehavior.Editable = false;
@@ -135,6 +138,7 @@ namespace Eygaz
                 TxtAddress = Address;
                 TxtPhone = Phone;
                 GenderDDL = Gender;
+                ClassIdDDL = ClassId;
                 ChkIsActive = IsActive;
                 GrdDtl.Columns[0].Caption = "الرقم";
                 GrdDtl.Columns[1].Caption = "الاسم";
@@ -143,8 +147,9 @@ namespace Eygaz
                 GrdDtl.Columns[4].Caption = "العنوان";
                 GrdDtl.Columns[5].Caption = "التلفون";
                 GrdDtl.Columns[6].Caption = "النوع";
-                GrdDtl.Columns[7].Caption = "الحاله";
-                GrdDtl.Columns[8].Caption = "الملاحظات";
+                GrdDtl.Columns[7].Caption = "الفصل";
+                GrdDtl.Columns[8].Caption = "الحاله";
+                GrdDtl.Columns[9].Caption = "الملاحظات";
 
 
 
@@ -228,7 +233,7 @@ namespace Eygaz
                         var sb = new System.Text.StringBuilder();
                         sb.AppendLine("SELECT ");
                         sb.AppendLine("Id, FullName, BirthDate, Address, Phone, Gender, ");
-                        sb.AppendLine("IsActive, Notes, CreatedAt ");
+                        sb.AppendLine("IsActive, Notes, CreatedAt,ClassId ");
                         sb.AppendLine("FROM Students WHERE Id = " + id + ";");
 
                         DataTable tbl = f.GetData(sb.ToString());
@@ -253,6 +258,10 @@ namespace Eygaz
                             else
                                 f.DataCombo(Gender, "GenderTypes", "Name", "Id", "");
 
+                            if (!string.IsNullOrEmpty(dr["ClassId"].ToString()))
+                                ClassId.SelectedValue = dr["ClassId"].ToString();
+                            else
+                                f.DataCombo(ClassId, "Classes", "ClassName", "Id", "");
                             // 🔹 IsActive (CheckBox)
                             IsActive.Checked = dr["IsActive"].ToString() == "1";
                         }
@@ -305,6 +314,7 @@ namespace Eygaz
                 if (f.ChkField(Id, msg + lblId.Text)) return;
                 if (f.ChkField(FullName, msg + lblFullName.Text)) return;
                 if (f.ChkField(GenderDDL, msg + lblGender.Text)) return;
+                if (f.ChkField(ClassIdDDL, msg + lblClassId.Text)) return;
 
                 string sql = "";
 

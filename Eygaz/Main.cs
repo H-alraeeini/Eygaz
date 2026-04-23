@@ -18,6 +18,11 @@ namespace Eygaz
         FrmTeacherAttendance frmteacherAttendance;
         FrmCertificateDesigner frmcertDesigner;
         FrmGenerateCertificate frmgenerateCert;
+        FrmGradeEntry frmGradeEntry;
+        FrmGradeReport frmGradeReport;
+        FrmComprehensiveGradeReport frmComprehensiveGradeReport;
+        FrmUserManagement frmUserManagement;
+        FrmPermissionsManagement frmPermissionsManagement;
 
         public Main()
         {
@@ -27,6 +32,33 @@ namespace Eygaz
         private void Main_Load(object sender, EventArgs e)
         {
             Func.dbname = Application.StartupPath + @"\EygazDb.db";
+            try
+            {
+                DatabaseMigrator.EnsureMigrated(Func.dbname);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("فشل تهيئة قاعدة البيانات:\n" + ex.Message, "خطأ", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Close();
+            }
+
+            ApplyPermissionsVisibility();
+            Text = "الرئيسية - " + AuthSession.DisplayName;
+        }
+
+        private void ApplyPermissionsVisibility()
+        {
+            bool canUsersView = AuthSession.HasPermission("users.view");
+            bool canPermissionsManage = AuthSession.HasPermission("permissions.manage");
+            bool canReportsView = AuthSession.HasPermission("reports.view");
+            bool canGradesManage = AuthSession.HasPermission("grades.manage");
+
+            MenuUserManagement.Visible = canUsersView;
+            MenuPermissions.Visible = canPermissionsManage;
+            MenuReport.Visible = canReportsView || canGradesManage;
+            MenuGradeEntry.Visible = canGradesManage;
+            MenuGradeReport.Visible = canReportsView || canGradesManage;
+            MenuComprehensiveGradeReport.Visible = canReportsView || canGradesManage;
         }
 
         private void MenuStudent_Click(object sender, EventArgs e)
@@ -208,6 +240,76 @@ namespace Eygaz
             else
             {
                 frmgenerateCert.BringToFront();
+            }
+        }
+
+        private void MenuGradeEntry_Click(object sender, EventArgs e)
+        {
+            if (frmGradeEntry == null || frmGradeEntry.IsDisposed)
+            {
+                frmGradeEntry = new FrmGradeEntry();
+                frmGradeEntry.MdiParent = this;
+                frmGradeEntry.Show();
+            }
+            else
+            {
+                frmGradeEntry.BringToFront();
+            }
+        }
+
+        private void MenuGradeReport_Click(object sender, EventArgs e)
+        {
+            if (frmGradeReport == null || frmGradeReport.IsDisposed)
+            {
+                frmGradeReport = new FrmGradeReport();
+                frmGradeReport.MdiParent = this;
+                frmGradeReport.Show();
+            }
+            else
+            {
+                frmGradeReport.BringToFront();
+            }
+        }
+
+        private void MenuComprehensiveGradeReport_Click(object sender, EventArgs e)
+        {
+            if (frmComprehensiveGradeReport == null || frmComprehensiveGradeReport.IsDisposed)
+            {
+                frmComprehensiveGradeReport = new FrmComprehensiveGradeReport();
+                frmComprehensiveGradeReport.MdiParent = this;
+                frmComprehensiveGradeReport.Show();
+            }
+            else
+            {
+                frmComprehensiveGradeReport.BringToFront();
+            }
+        }
+
+        private void MenuUserManagement_Click(object sender, EventArgs e)
+        {
+            if (frmUserManagement == null || frmUserManagement.IsDisposed)
+            {
+                frmUserManagement = new FrmUserManagement();
+                frmUserManagement.MdiParent = this;
+                frmUserManagement.Show();
+            }
+            else
+            {
+                frmUserManagement.BringToFront();
+            }
+        }
+
+        private void MenuPermissions_Click(object sender, EventArgs e)
+        {
+            if (frmPermissionsManagement == null || frmPermissionsManagement.IsDisposed)
+            {
+                frmPermissionsManagement = new FrmPermissionsManagement();
+                frmPermissionsManagement.MdiParent = this;
+                frmPermissionsManagement.Show();
+            }
+            else
+            {
+                frmPermissionsManagement.BringToFront();
             }
         }
     }

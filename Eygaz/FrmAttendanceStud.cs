@@ -44,9 +44,9 @@ namespace Eygaz
         {
             try
             {
-                f.DataCombo(ClassId, "Classes", "ClassName", "Id", " WHERE IsActive = 1 ORDER BY ClassName");
-                f.DataCombo(SubjectId, "Subjects", "SubjectName", "Id", " WHERE IsActive = 1 ORDER BY SubjectName");
-                f.DataCombo(TeacherId, "Teachers", "FullName", "Id", " WHERE IsActive = 1 ORDER BY FullName");
+                f.DataCombo(ClassId, "Classes", "ClassName", "Id", " WHERE IsActive = 0 ORDER BY ClassName");
+                f.DataCombo(SubjectId, "Subjects", "SubjectName", "Id", " WHERE IsActive = 0 ORDER BY SubjectName");
+                f.DataCombo(TeacherId, "Teachers", "FullName", "Id", " WHERE IsActive = 0 ORDER BY FullName");
 
                 AttendDate.Value = DateTime.Today;
 
@@ -274,9 +274,9 @@ namespace Eygaz
                     currentSessionId = attendanceHelper.CreateSession(classId, subjectId, teacherId, sessionDate);
                     if (currentSessionId <= 0)
                     {
-                        MessageBox.Show("حدث خطأ أثناء إنشاء جلسة الحضور", "خطأ",
-                            MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        return;
+                        //MessageBox.Show("حدث خطأ أثناء إنشاء جلسة الحضور", "خطأ",
+                        //    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        //return;
                     }
                 }
 

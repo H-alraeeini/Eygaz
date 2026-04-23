@@ -22,9 +22,9 @@ namespace Eygaz
             try
             {
                 // تعبئة الفلاتر
-                f.DataComboWithNull(CmbClass, "Classes", "ClassName", "Id", " WHERE IsActive = 1 ORDER BY ClassName");
-                f.DataComboWithNull(CmbSubject, "Subjects", "SubjectName", "Id", " WHERE IsActive = 1 ORDER BY SubjectName");
-                f.DataComboWithNull(CmbTeacher, "Teachers", "FullName", "Id", " WHERE IsActive = 1 ORDER BY FullName");
+                f.DataComboWithNull(CmbClass, "Classes", "ClassName", "Id", " WHERE IsActive <> 1 ORDER BY ClassName");
+                f.DataComboWithNull(CmbSubject, "Subjects", "SubjectName", "Id", " WHERE IsActive <> 1 ORDER BY SubjectName");
+                f.DataComboWithNull(CmbTeacher, "Teachers", "FullName", "Id", " WHERE IsActive = <> ORDER BY FullName");
 
                 // تعيين فترة افتراضية (الشهر الحالي)
                 DtFrom.Value = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);

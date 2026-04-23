@@ -1387,6 +1387,10 @@ namespace Eygaz
             using (var cn = new SQLiteConnection(@"Data Source=" + Func.dbname))
             {
                 cn.Open();
+                using (var timeoutCmd = new SQLiteCommand("PRAGMA busy_timeout = 5000;", cn))
+                {
+                    timeoutCmd.ExecuteNonQuery();
+                }
                 using (var tx = cn.BeginTransaction())
                 {
                     try
@@ -1394,10 +1398,10 @@ namespace Eygaz
                         var examIdsBySubject = new Dictionary<int, int>();
                         foreach (int subjectId in subjectColumns.Values.Distinct())
                         {
-                            int examId = GetExamId(classId, subjectId, term);
+                            int examId = GetExamId(classId, subjectId, term, cn, tx);
                             if (examId <= 0)
                             {
-                                examId = CreateExam(subjectId, classId, term, examDate, maxScore, description);
+                                examId = CreateExam(subjectId, classId, term, examDate, maxScore, description, cn, tx);
                             }
 
                             if (examId <= 0)
@@ -1461,6 +1465,59 @@ namespace Eygaz
                         return false;
                     }
                 }
+            }
+        }
+
+        private int GetExamId(int classId, int subjectId, string term, SQLiteConnection cn, SQLiteTransaction tx)
+        {
+            using (var cmd = new SQLiteCommand(@"
+                SELECT Id
+                FROM Exams
+                WHERE ClassId = @classId AND SubjectId = @subjectId AND Term = @term
+                ORDER BY ExamDate DESC, Id DESC
+                LIMIT 1;", cn, tx))
+            {
+                cmd.Parameters.AddWithValue("@classId", classId);
+                cmd.Parameters.AddWithValue("@subjectId", subjectId);
+                cmd.Parameters.AddWithValue("@term", term ?? "");
+
+                object value = cmd.ExecuteScalar();
+                if (value == null || value == DBNull.Value) return 0;
+                return Convert.ToInt32(value);
+            }
+        }
+
+        private int CreateExam(
+            int subjectId,
+            int classId,
+            string term,
+            string examDate,
+            double maxScore,
+            string description,
+            SQLiteConnection cn,
+            SQLiteTransaction tx)
+        {
+            using (var insertCmd = new SQLiteCommand(@"
+                INSERT INTO Exams (SubjectId, ClassId, Term, ExamDate, MaxScore, Description)
+                VALUES (@subjectId, @classId, @term, @examDate, @maxScore, @description);", cn, tx))
+            {
+                insertCmd.Parameters.AddWithValue("@subjectId", subjectId);
+                insertCmd.Parameters.AddWithValue("@classId", classId);
+                insertCmd.Parameters.AddWithValue("@term", term ?? "");
+                insertCmd.Parameters.AddWithValue("@examDate", examDate ?? "");
+                insertCmd.Parameters.AddWithValue("@maxScore", maxScore);
+                insertCmd.Parameters.AddWithValue("@description", description ?? "");
+
+                int rows = insertCmd.ExecuteNonQuery();
+                if (rows <= 0) return -1;
+            }
+
+            // last_insert_rowid is connection-scoped and safe inside this transaction.
+            using (var idCmd = new SQLiteCommand("SELECT last_insert_rowid();", cn, tx))
+            {
+                object id = idCmd.ExecuteScalar();
+                if (id == null || id == DBNull.Value) return -1;
+                return Convert.ToInt32(id);
             }
         }
 

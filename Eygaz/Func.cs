@@ -158,7 +158,7 @@ namespace Eygaz
                     return localCmd.ExecuteNonQuery();
                 }
             }
-            catch
+            catch (Exception ex)
             {
                 return -1;
             }

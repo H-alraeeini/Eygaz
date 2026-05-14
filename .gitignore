@@ -361,3 +361,6 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/cursor_.md
+/Enhancing Student Report Functionality.md
+/implementation_plan.md

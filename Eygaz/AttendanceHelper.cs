@@ -1474,8 +1474,10 @@ namespace Eygaz
         // =============================================
         // 48. تقرير كشف الدرجات
         // =============================================
-        public DataTable GetGradeReport(int classId, string term, int studentId = 0, int subjectId = 0)
+        public DataTable GetGradeReport(int classId, string term, int gradeYear, int gradeMonth, int studentId = 0, int subjectId = 0)
         {
+            EnsureHijriDateColumns();
+
             string sql = @"
                 SELECT
                     s.Id AS StudentId,
@@ -1500,14 +1502,18 @@ namespace Eygaz
                 INNER JOIN Subjects sub ON sub.Id = e.SubjectId
                 WHERE e.ClassId = @classId
                   AND e.Term = @term
+                  AND e.GradeYear = @gradeYear
+                  AND e.GradeMonth = @gradeMonth
                   AND (@studentId = 0 OR s.Id = @studentId)
                   AND (@subjectId = 0 OR sub.Id = @subjectId)
-                ORDER BY s.FullName, e.ExamDate;";
+                ORDER BY COALESCE(sub.DisplayOrder, 0), sub.SubjectName, s.FullName, e.ExamDate;";
 
             var parameters = new Dictionary<string, object>
             {
                 { "@classId", classId },
                 { "@term", term ?? "" },
+                { "@gradeYear", gradeYear },
+                { "@gradeMonth", gradeMonth },
                 { "@studentId", studentId },
                 { "@subjectId", subjectId }
             };
@@ -1517,8 +1523,10 @@ namespace Eygaz
         // =============================================
         // 49. ملخص كشف الدرجات
         // =============================================
-        public DataTable GetGradeSummary(int classId, string term, int studentId = 0, int subjectId = 0)
+        public DataTable GetGradeSummary(int classId, string term, int gradeYear, int gradeMonth, int studentId = 0, int subjectId = 0)
         {
+            EnsureHijriDateColumns();
+
             string sql = @"
                 SELECT
                     ROUND(AVG((er.Score * 100.0) / e.MaxScore), 1) AS AveragePercent,
@@ -1531,6 +1539,8 @@ namespace Eygaz
                 INNER JOIN Students s ON s.Id = er.StudentId
                 WHERE e.ClassId = @classId
                   AND e.Term = @term
+                  AND e.GradeYear = @gradeYear
+                  AND e.GradeMonth = @gradeMonth
                   AND (@studentId = 0 OR s.Id = @studentId)
                   AND (@subjectId = 0 OR e.SubjectId = @subjectId);";
 
@@ -1538,6 +1548,8 @@ namespace Eygaz
             {
                 { "@classId", classId },
                 { "@term", term ?? "" },
+                { "@gradeYear", gradeYear },
+                { "@gradeMonth", gradeMonth },
                 { "@studentId", studentId },
                 { "@subjectId", subjectId }
             };
@@ -1547,31 +1559,40 @@ namespace Eygaz
         // =============================================
         // 50. كشف درجات شامل (أعمدة ثابتة + آخر سورة)
         // =============================================
-        public DataTable GetComprehensiveGradeSheetRaw(int classId, string term, string studentName)
+        public DataTable GetComprehensiveGradeSheetRaw(int classId, string term, int gradeYear, int gradeMonth, string studentName)
         {
+            EnsureHijriDateColumns();
+
             string sql = @"
                 SELECT
                     s.Id AS StudentId,
                     s.FullName AS StudentName,
                     sub.SubjectName,
                     sub.Id AS SubjectId,
+                    COALESCE(sub.DisplayOrder, 0) AS SubjectDisplayOrder,
                     e.MaxScore AS MaxScore,
                     er.Score AS Score,
                     er.LastSurah AS LastSurah
                 FROM Students s
                 LEFT JOIN StudentSubjects ss ON ss.StudentId = s.Id
                 LEFT JOIN Subjects sub ON sub.Id = ss.SubjectId
-                LEFT JOIN Exams e ON e.SubjectId = ss.SubjectId AND e.ClassId = @classId AND e.Term = @term
+                LEFT JOIN Exams e ON e.SubjectId = ss.SubjectId
+                    AND e.ClassId = @classId
+                    AND e.Term = @term
+                    AND e.GradeYear = @gradeYear
+                    AND e.GradeMonth = @gradeMonth
                 LEFT JOIN ExamResults er ON er.ExamId = e.Id AND er.StudentId = s.Id
                 WHERE s.ClassId = @classId
                   AND s.IsActive = 0
                   AND (@studentName = '' OR s.FullName LIKE '%' || @studentName || '%')
-                ORDER BY s.FullName, sub.SubjectName;";
+                ORDER BY s.FullName, COALESCE(sub.DisplayOrder, 0), sub.SubjectName;";
 
             var parameters = new Dictionary<string, object>
             {
                 { "@classId", classId },
                 { "@term", term ?? "" },
+                { "@gradeYear", gradeYear },
+                { "@gradeMonth", gradeMonth },
                 { "@studentName", studentName ?? "" }
             };
 
@@ -1684,7 +1705,7 @@ namespace Eygaz
                 INNER JOIN Students s ON s.Id = ss.StudentId
                 INNER JOIN Subjects sub ON sub.Id = ss.SubjectId
                 WHERE s.ClassId = @classId
-                ORDER BY sub.SubjectName;",
+                ORDER BY COALESCE(sub.DisplayOrder, 0), sub.SubjectName;",
                 new Dictionary<string, object> { { "@classId", classId } });
 
             DataTable results = f.GetData(@"
@@ -2176,13 +2197,14 @@ namespace Eygaz
 
         public DataTable GetAllSubjectsForClass(int classId)
         {
+            EnsureHijriDateColumns();
             return f.GetData($@"
                 SELECT DISTINCT sub.Id AS SubjectId, sub.SubjectName
                 FROM StudentSubjects ss
                 INNER JOIN Students s ON s.Id = ss.StudentId
                 INNER JOIN Subjects sub ON sub.Id = ss.SubjectId
                 WHERE s.ClassId = {classId}
-                ORDER BY sub.SubjectName");
+                ORDER BY COALESCE(sub.DisplayOrder, 0), sub.SubjectName");
         }
     }
 }

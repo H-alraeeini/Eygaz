@@ -64,7 +64,7 @@ namespace Eygaz
         {
             TxtSubjectName.Text = "";
             TxtDescription.Text = "";
-
+            DisplayOrder.Text = "0";
         }
         private void SetForm()
         {
@@ -76,9 +76,10 @@ namespace Eygaz
                     "Id, " +
                     "SubjectName, " +
                     "Description, " +
+                    "DisplayOrder, " +
                     "IsActive, " +
                     "CreatedAt " +
-                  "FROM " + Tbl + " ORDER BY " + Pky + "";
+                  "FROM " + Tbl + " ORDER BY DisplayOrder, SubjectName, " + Pky + "";
 
 
             // ربط الحقول
@@ -107,17 +108,19 @@ namespace Eygaz
                 GrdDtl.Columns[0].Caption = "الرقم";
                 GrdDtl.Columns[1].Caption = "الاسم";
                 GrdDtl.Columns[2].Caption = "الوصف";
-                GrdDtl.Columns[3].Caption = "الحاله";
-
+                GrdDtl.Columns[3].Caption = "ترتيب العرض";
+                GrdDtl.Columns[4].Caption = "الحاله";
+                if (GrdDtl.Columns.Count > 5)
+                    GrdDtl.Columns[5].Caption = "تاريخ الإنشاء";
 
                 int ValAll = GVShow.Width - 20;
                 for (int i = 0; i < MaxFld; i++)
                 {
-                    GrdDtl.Columns[i].Width = ValAll * 10 / 100;
-                    if (i == 3 || i == 1 || i == 9 || i == 10)
-                        GrdDtl.Columns[i].Width = ValAll * 20 / 100;
-                    else if (i == 2)
-                        GrdDtl.Columns[i].Width = ValAll * 15 / 100;
+                    GrdDtl.Columns[i].Width = ValAll * 9 / 100;
+                    if (i == 1 || i == 2)
+                        GrdDtl.Columns[i].Width = ValAll * 18 / 100;
+                    else if (i == 3 || i == 4)
+                        GrdDtl.Columns[i].Width = ValAll * 10 / 100;
                 }
 
             }
@@ -143,8 +146,8 @@ namespace Eygaz
                         // 🔹 استخدم StringBuilder لكتابة استعلام جدول Subjects
                         var sb = new System.Text.StringBuilder();
                         sb.AppendLine("SELECT ");
-                        sb.AppendLine("Id, SubjectName,  Description, ");
-                        sb.AppendLine("IsActive,  CreatedAt ");
+                        sb.AppendLine("Id, SubjectName, Description, ");
+                        sb.AppendLine("DisplayOrder, IsActive, CreatedAt ");
                         sb.AppendLine("FROM Subjects WHERE Id = " + id + ";");
 
                         DataTable tbl = f.GetData(sb.ToString());
@@ -159,6 +162,9 @@ namespace Eygaz
                             TxtId.Text = dr["Id"].ToString();
                             SubjectName.Text = dr["SubjectName"].ToString();
                             Description.Text = dr["Description"].ToString();
+                            DisplayOrder.Text = dr.Table.Columns.Contains("DisplayOrder") && dr["DisplayOrder"] != DBNull.Value
+                                ? dr["DisplayOrder"].ToString()
+                                : "0";
 
                             // 🔹 IsActive (CheckBox)
                             IsActive.Checked = dr["IsActive"].ToString() == "1";
@@ -256,6 +262,15 @@ namespace Eygaz
 
                 if (f.ChkField(Id, msg + lblId.Text)) return;
                 if (f.ChkField(SubjectName, msg + lblName.Text)) return;
+
+                if (!int.TryParse(DisplayOrder.Text.Trim(), out int displayOrderVal) || displayOrderVal < 0)
+                {
+                    MessageBox.Show("ترتيب العرض يجب أن يكون رقماً صحيحاً (0 أو أكبر).", "تنبيه", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    DisplayOrder.Focus();
+                    return;
+                }
+
+                DisplayOrder.Text = displayOrderVal.ToString();
 
                 string sql = "";
 

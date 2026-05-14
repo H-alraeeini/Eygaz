@@ -10,6 +10,44 @@ namespace Eygaz
 {
     public partial class FrmGradeEntry : MetroFramework.Forms.MetroForm
     {
+        // ???? ????? ???????? ????? Unicode ?????? ????? ????? ????? (???? ??? ??? ???????).
+        private static class T
+        {
+            public const string InitialHint =
+                "\u0627\u062e\u062a\u0631\u0020\u0627\u0644\u0641\u0635\u0644\u0020\u0648\u0627\u0644\u062a\u0631\u0645\u0020\u0648\u0627\u0644\u0633\u0646\u0629\u0020\u0648\u0627\u0644\u0634\u0647\u0631\u0020\u062b\u0645\u0020\u0627\u0636\u063a\u0637\u0020\u062a\u062d\u0645\u064a\u0644\u0020\u0627\u0644\u0637\u0644\u0627\u0628\u002e";
+            public const string PickClassTerm =
+                "\u064a\u0631\u062c\u0649\u0020\u0627\u062e\u062a\u064a\u0627\u0631\u0020\u0627\u0644\u0641\u0635\u0644\u0020\u0648\u0627\u0644\u062a\u0631\u0645\u002e";
+            public const string PickYearMonthLoad =
+                "\u064a\u0631\u062c\u0649\u0020\u0627\u062e\u062a\u064a\u0627\u0631\u0020\u0627\u0644\u0633\u0646\u0629\u0020\u0648\u0627\u0644\u0634\u0647\u0631\u0020\u0644\u0645\u062a\u0627\u0628\u0639\u0629\u0020\u0627\u0644\u062f\u0631\u062c\u0627\u062a\u002e";
+            public const string PickYearMonthSave =
+                "\u064a\u0631\u062c\u0649\u0020\u0627\u062e\u062a\u064a\u0627\u0631\u0020\u0627\u0644\u0633\u0646\u0629\u0020\u0648\u0627\u0644\u0634\u0647\u0631\u002e";
+            public const string UnsavedBody =
+                "\u0644\u062f\u064a\u0643\u0020\u062a\u063a\u064a\u064a\u0631\u0627\u062a\u0020\u063a\u064a\u0631\u0020\u0645\u062d\u0641\u0648\u0638\u0629\u002e\u0020\u0647\u0644\u0020\u062a\u0631\u064a\u062f\u0020\u0627\u0644\u0645\u062a\u0627\u0628\u0639\u0629\u0020\u0648\u0641\u0642\u062f\u0627\u0646\u0647\u0627\u061f";
+            public const string UnsavedTitle = "\u062a\u0646\u0628\u064a\u0647";
+            public const string ColStudentName = "\u0627\u0633\u0645\u0020\u0627\u0644\u0637\u0627\u0644\u0628";
+            public const string ColLastSurah = "\u0622\u062e\u0631\u0020\u0633\u0648\u0631\u0629";
+            public const string NoPermission =
+                "\u0644\u064a\u0633\u0020\u0644\u062f\u064a\u0643\u0020\u0635\u0644\u0627\u062d\u064a\u0629\u0020\u0625\u062f\u0627\u0631\u0629\u0020\u0627\u0644\u062f\u0631\u062c\u0627\u062a\u002e";
+            public const string FillSelection =
+                "\u064a\u0631\u062c\u0649\u0020\u062a\u0639\u0628\u0626\u0629\u0020\u0628\u064a\u0627\u0646\u0627\u062a\u0020\u0627\u0644\u0627\u062e\u062a\u064a\u0627\u0631\u002e";
+            public const string MaxScoreInvalid =
+                "\u0627\u0644\u062f\u0631\u062c\u0629\u0020\u0627\u0644\u0639\u0638\u0645\u0649\u0020\u063a\u064a\u0631\u0020\u0635\u062d\u064a\u062d\u0629\u002e";
+            public const string NoStudents = "\u0644\u0627\u0020\u064a\u0648\u062c\u062f\u0020\u0637\u0644\u0627\u0628\u002e";
+            public const string NoSubjects = "\u0644\u0627\u0020\u062a\u0648\u062c\u062f\u0020\u0645\u0648\u0627\u062f\u0020\u0644\u0644\u062d\u0641\u0638\u002e";
+            public const string BadScorePrefix =
+                "\u062f\u0631\u062c\u0629\u0020\u063a\u064a\u0631\u0020\u0635\u062d\u064a\u062d\u0629\u0020\u0644\u0644\u0637\u0627\u0644\u0628\u003a\u0020";
+            public const string BadScoreSubject = "\u0020\u0627\u0644\u0645\u0627\u062f\u0629\u003a\u0020";
+            public const string BlankThere = "\u0647\u0646\u0627\u0643\u0020";
+            public const string BlankSuffix =
+                "\u0020\u062e\u0644\u0627\u064a\u0627\u0020\u062f\u0631\u062c\u0627\u062a\u0020\u0641\u0627\u0631\u063a\u0629\u002e\u0020\u0647\u0644\u0020\u062a\u0631\u064a\u062f\u0020\u0627\u0644\u0645\u062a\u0627\u0628\u0639\u0629\u061f";
+            public const string ConfirmSaveTitle = "\u062a\u0623\u0643\u064a\u062f\u0020\u0627\u0644\u062d\u0641\u0638";
+            public const string SaveFailPrefix = "\u0641\u0634\u0644\u0020\u0627\u0644\u062d\u0641\u0638\u003a\u0020";
+            public const string SaveSuccess = "\u062a\u0645\u0020\u062d\u0641\u0638\u0020\u0627\u0644\u062f\u0631\u062c\u0627\u062a\u0020\u0628\u0646\u062c\u0627\u062d\u002e";
+            public const string Loaded1 = "\u062a\u0645\u0020\u062a\u062d\u0645\u064a\u0644\u0020";
+            public const string Loaded2 = "\u0020\u0637\u0627\u0644\u0628\u0627\u064b\u0020\u0648\u0020";
+            public const string Loaded3 = "\u0020\u0645\u0627\u062f\u0629\u002e\u0020\u062f\u0631\u062c\u0627\u062a\u0020\u0645\u0633\u062c\u0644\u0629\u003a\u0020";
+        }
+
         private readonly Func f = new Func();
         private readonly AttendanceHelper helper = new AttendanceHelper();
         private readonly Dictionary<string, int> subjectColumnToId = new Dictionary<string, int>();
@@ -46,7 +84,7 @@ namespace Eygaz
             DtExamDate.ValueChanged += DtExamDate_ValueChanged;
             UpdateHijriDateLabel();
             TxtMaxScore.Text = "100";
-            LblStatus.Text = "???? ????? + ????? ?? ???? ????? ??????.";
+            LblStatus.Text = T.InitialHint;
 
             CmbClass.SelectedIndexChanged += Filters_SelectedIndexChanged;
             CmbTerm.SelectedIndexChanged += Filters_SelectedIndexChanged;
@@ -95,7 +133,7 @@ namespace Eygaz
         {
             if (CmbClass.SelectedValue == null || CmbTerm.SelectedItem == null)
             {
-                MessageBox.Show("???? ?????? ????? + ?????.");
+                MessageBox.Show(T.PickClassTerm);
                 return;
             }
 
@@ -103,15 +141,15 @@ namespace Eygaz
             int gradeMonth = GetSelectedGradeMonth();
             if (gradeYear <= 0 || gradeMonth < 1 || gradeMonth > 12)
             {
-                MessageBox.Show("\u064a\u0631\u062c\u0649 \u0627\u062e\u062a\u064a\u0627\u0631 \u0627\u0644\u0633\u0646\u0629 \u0648\u0627\u0644\u0634\u0647\u0631 \u0644\u0645\u062a\u0627\u0628\u0639\u0629 \u0627\u0644\u062f\u0631\u062c\u0627\u062a.");
+                MessageBox.Show(T.PickYearMonthLoad);
                 return;
             }
 
             if (isDirty)
             {
                 DialogResult confirm = MessageBox.Show(
-                    "???? ??????? ??? ?????? ?? ???? ???????? ????????",
-                    "?????",
+                    T.UnsavedBody,
+                    T.UnsavedTitle,
                     MessageBoxButtons.YesNo,
                     MessageBoxIcon.Warning);
                 if (confirm != DialogResult.Yes) return;
@@ -138,9 +176,9 @@ namespace Eygaz
             GVStudents.DataSource = dt;
             GrdStudents.BestFitColumns();
             if (GrdStudents.Columns["StudentId"] != null) GrdStudents.Columns["StudentId"].Visible = false;
-            if (GrdStudents.Columns["StudentName"] != null) GrdStudents.Columns["StudentName"].Caption = "??? ??????";
+            if (GrdStudents.Columns["StudentName"] != null) GrdStudents.Columns["StudentName"].Caption = T.ColStudentName;
             if (GrdStudents.Columns["StudentName"] != null) GrdStudents.Columns["StudentName"].OptionsColumn.ReadOnly = true;
-            if (GrdStudents.Columns["LastSurah"] != null) GrdStudents.Columns["LastSurah"].Caption = "??? ????";
+            if (GrdStudents.Columns["LastSurah"] != null) GrdStudents.Columns["LastSurah"].Caption = T.ColLastSurah;
 
             foreach (var col in subjectColumnToId)
             {
@@ -171,7 +209,7 @@ namespace Eygaz
                 }
             }
 
-            LblStatus.Text = $"?? ????? {dt.Rows.Count} ?????? ? {subjectColumnToId.Count} ???? ? ????? ?????: {existingScores}.";
+            LblStatus.Text = T.Loaded1 + dt.Rows.Count + T.Loaded2 + subjectColumnToId.Count + T.Loaded3 + existingScores + ".";
             isDirty = false;
         }
 
@@ -179,13 +217,13 @@ namespace Eygaz
         {
             if (!AuthSession.HasPermission("grades.manage"))
             {
-                MessageBox.Show("??? ???? ?????? ????? ???????.");
+                MessageBox.Show(T.NoPermission);
                 return;
             }
 
             if (CmbClass.SelectedValue == null || CmbTerm.SelectedItem == null)
             {
-                MessageBox.Show("???? ????? ?????? ????????.");
+                MessageBox.Show(T.FillSelection);
                 return;
             }
 
@@ -193,26 +231,26 @@ namespace Eygaz
             int gradeMonthSave = GetSelectedGradeMonth();
             if (gradeYearSave <= 0 || gradeMonthSave < 1 || gradeMonthSave > 12)
             {
-                MessageBox.Show("\u064a\u0631\u062c\u0649 \u0627\u062e\u062a\u064a\u0627\u0631 \u0627\u0644\u0633\u0646\u0629 \u0648\u0627\u0644\u0634\u0647\u0631.");
+                MessageBox.Show(T.PickYearMonthSave);
                 return;
             }
 
             if (!double.TryParse(TxtMaxScore.Text, out double maxScore) || maxScore <= 0)
             {
-                MessageBox.Show("?????? ?????? ??? ?????.");
+                MessageBox.Show(T.MaxScoreInvalid);
                 return;
             }
 
             DataTable students = GVStudents.DataSource as DataTable;
             if (students == null || students.Rows.Count == 0)
             {
-                MessageBox.Show("?? ???? ????.");
+                MessageBox.Show(T.NoStudents);
                 return;
             }
 
             if (subjectColumnToId.Count == 0)
             {
-                MessageBox.Show("?? ???? ???? ?????.");
+                MessageBox.Show(T.NoSubjects);
                 return;
             }
 
@@ -239,7 +277,7 @@ namespace Eygaz
                         string subjectName = GrdStudents.Columns[subject.Key] == null
                             ? subject.Key
                             : GrdStudents.Columns[subject.Key].Caption;
-                        MessageBox.Show("???? ??? ????? ??????: " + row["StudentName"] + " ? ??????: " + subjectName);
+                        MessageBox.Show(T.BadScorePrefix + row["StudentName"] + T.BadScoreSubject + subjectName);
                         return;
                     }
                 }
@@ -248,8 +286,8 @@ namespace Eygaz
             if (totalCells > 0 && (blankCount * 100.0 / totalCells) > 30.0)
             {
                 DialogResult confirm = MessageBox.Show(
-                    $"???? {blankCount} ???? ????? ?????. ?? ???? ????????",
-                    "????? ?????",
+                    T.BlankThere + blankCount + T.BlankSuffix,
+                    T.ConfirmSaveTitle,
                     MessageBoxButtons.YesNo,
                     MessageBoxIcon.Question);
                 if (confirm != DialogResult.Yes) return;
@@ -269,11 +307,11 @@ namespace Eygaz
                 out string errorMessage);
             if (!ok)
             {
-                MessageBox.Show("??? ?????: " + errorMessage);
+                MessageBox.Show(T.SaveFailPrefix + errorMessage);
                 return;
             }
 
-            MessageBox.Show("?? ??? ??????? ?????.");
+            MessageBox.Show(T.SaveSuccess);
             isDirty = false;
             BtnLoadStudents_Click(sender, e);
         }
@@ -304,9 +342,6 @@ namespace Eygaz
         private void Filters_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (!isDirty) return;
-            // user warned on explicit load; no extra popup here
         }
     }
 }
-
-

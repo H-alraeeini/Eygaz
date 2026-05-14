@@ -48,9 +48,29 @@ namespace Eygaz
             CmbTerm.Items.Clear();
             CmbTerm.Items.AddRange(new object[] { "First", "Second", "Final" });
             CmbTerm.SelectedIndex = 0;
+
+            int currentYear = DateTime.Today.Year;
+            for (int yr = currentYear - 2; yr <= currentYear + 3; yr++)
+                CmbGradeYear.Items.Add(yr);
+            CmbGradeYear.SelectedItem = currentYear;
+
+            var arCulture = new CultureInfo("ar-SA");
+            CmbGradeMonth.Items.Clear();
+            for (int m = 1; m <= 12; m++)
+                CmbGradeMonth.Items.Add($"{m} - {arCulture.DateTimeFormat.GetMonthName(m)}");
+            CmbGradeMonth.SelectedIndex = DateTime.Today.Month - 1;
+
             GrdSheet.RowCellStyle += GrdSheet_RowCellStyle;
             ConfigureGradeSheetPrintDefaultsOnView();
         }
+
+        private int GetSelectedGradeYear()
+        {
+            if (CmbGradeYear.SelectedItem == null) return 0;
+            return Convert.ToInt32(CmbGradeYear.SelectedItem);
+        }
+
+        private int GetSelectedGradeMonth() => CmbGradeMonth.SelectedIndex + 1;
 
         private void BtnShow_Click(object sender, EventArgs e)
         {
@@ -60,11 +80,19 @@ namespace Eygaz
                 return;
             }
 
+            int gradeYear = GetSelectedGradeYear();
+            int gradeMonth = GetSelectedGradeMonth();
+            if (gradeYear <= 0 || gradeMonth < 1 || gradeMonth > 12)
+            {
+                MessageBox.Show("\u064A\u0631\u062C\u0649 \u0627\u062E\u062A\u064A\u0627\u0631 \u0627\u0644\u0633\u0646\u0629 \u0648\u0627\u0644\u0634\u0647\u0631.", "\u062A\u0646\u0628\u064A\u0647", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
             int classId = Convert.ToInt32(CmbClass.SelectedValue);
             string term = CmbTerm.SelectedItem.ToString();
             string studentSearch = TxtSearch.Text.Trim();
 
-            DataTable raw = helper.GetComprehensiveGradeSheetRaw(classId, term, studentSearch);
+            DataTable raw = helper.GetComprehensiveGradeSheetRaw(classId, term, gradeYear, gradeMonth, studentSearch);
             subjectMaxCaps = BuildSubjectMaxCaps(raw);
             viewTable = BuildComputedSheet(raw);
             GVSheet.DataSource = viewTable;
@@ -78,23 +106,39 @@ namespace Eygaz
             table.Columns.Add(ColSerial, typeof(int));
             table.Columns.Add(ColName, typeof(string));
             table.Columns.Add(ColLastSurah, typeof(string));
-            table.Columns.Add(ColTotal, typeof(double));
-            table.Columns.Add(ColPercent, typeof(double));
-            table.Columns.Add(ColRank, typeof(int));
-            table.Columns.Add("TopFlag", typeof(bool));
 
             if (raw == null || raw.Rows.Count == 0)
+            {
+                table.Columns.Add(ColTotal, typeof(double));
+                table.Columns.Add(ColPercent, typeof(double));
+                table.Columns.Add(ColRank, typeof(int));
+                table.Columns.Add("TopFlag", typeof(bool));
                 return table;
+            }
 
+            bool hasOrderCol = raw.Columns.Contains("SubjectDisplayOrder");
             var subjects = raw.AsEnumerable()
-                .Select(r => r["SubjectName"] == DBNull.Value ? "" : (r["SubjectName"].ToString() ?? "").Trim())
-                .Where(s => !string.IsNullOrWhiteSpace(s))
-                .Distinct()
-                .OrderBy(s => s)
+                .Where(r => r["SubjectName"] != DBNull.Value && !string.IsNullOrWhiteSpace(r["SubjectName"]?.ToString()))
+                .GroupBy(r => (r["SubjectName"].ToString() ?? "").Trim())
+                .Select(g => new
+                {
+                    Name = g.Key,
+                    SortKey = hasOrderCol
+                        ? g.Min(x => x["SubjectDisplayOrder"] == DBNull.Value ? 0 : Convert.ToInt32(x["SubjectDisplayOrder"]))
+                        : 0
+                })
+                .OrderBy(x => x.SortKey)
+                .ThenBy(x => x.Name, StringComparer.Ordinal)
+                .Select(x => x.Name)
                 .ToList();
 
             foreach (string subject in subjects)
                 table.Columns.Add(subject, typeof(string));
+
+            table.Columns.Add(ColTotal, typeof(double));
+            table.Columns.Add(ColPercent, typeof(double));
+            table.Columns.Add(ColRank, typeof(int));
+            table.Columns.Add("TopFlag", typeof(bool));
 
             var grouped = raw.AsEnumerable()
                 .GroupBy(r => new

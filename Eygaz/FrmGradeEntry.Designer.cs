@@ -97,7 +97,7 @@
             this.BtnLoadStudents.Name = "BtnLoadStudents";
             this.BtnLoadStudents.Size = new System.Drawing.Size(120, 24);
             this.BtnLoadStudents.TabIndex = 6;
-            this.BtnLoadStudents.Text = "تحميل الطلاب";
+            this.BtnLoadStudents.Text = "\u062a\u062d\u0645\u064a\u0644\u0020\u0627\u0644\u0637\u0644\u0627\u0628";
             this.BtnLoadStudents.UseVisualStyleBackColor = true;
             this.BtnLoadStudents.Click += new System.EventHandler(this.BtnLoadStudents_Click);
             // 
@@ -107,7 +107,7 @@
             this.BtnSave.Name = "BtnSave";
             this.BtnSave.Size = new System.Drawing.Size(120, 24);
             this.BtnSave.TabIndex = 7;
-            this.BtnSave.Text = "حفظ الدرجات";
+            this.BtnSave.Text = "\u062d\u0641\u0638\u0020\u0627\u0644\u062f\u0631\u062c\u0627\u062a";
             this.BtnSave.UseVisualStyleBackColor = true;
             this.BtnSave.Click += new System.EventHandler(this.BtnSave_Click);
             // 
@@ -153,7 +153,7 @@
             this.Controls.Add(this.CmbSubject);
             this.Controls.Add(this.CmbClass);
             this.Name = "FrmGradeEntry";
-            this.Text = "إدخال الدرجات";
+            this.Text = "\u0625\u062f\u062e\u0627\u0644\u0020\u0627\u0644\u062f\u0631\u062c\u0627\u062a";
             this.Load += new System.EventHandler(this.FrmGradeEntry_Load);
             ((System.ComponentModel.ISupportInitialize)(this.GVStudents)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.GrdStudents)).EndInit();

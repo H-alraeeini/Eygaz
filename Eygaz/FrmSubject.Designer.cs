@@ -39,6 +39,8 @@
             this.lblId = new System.Windows.Forms.Label();
             this.Description = new System.Windows.Forms.TextBox();
             this.lblNotes = new System.Windows.Forms.Label();
+            this.lblDisplayOrder = new System.Windows.Forms.Label();
+            this.DisplayOrder = new System.Windows.Forms.TextBox();
             this.Id = new System.Windows.Forms.TextBox();
             this.lblNo = new System.Windows.Forms.Label();
             this.PnlBut = new System.Windows.Forms.Panel();
@@ -59,7 +61,7 @@
             // 
             this.PnlSrh.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.PnlSrh.Controls.Add(this.GVShow);
-            this.PnlSrh.Location = new System.Drawing.Point(32, 244);
+            this.PnlSrh.Location = new System.Drawing.Point(32, 258);
             this.PnlSrh.Name = "PnlSrh";
             this.PnlSrh.Size = new System.Drawing.Size(614, 220);
             this.PnlSrh.TabIndex = 78;
@@ -106,11 +108,13 @@
             this.PnlData.Controls.Add(this.lblId);
             this.PnlData.Controls.Add(this.Description);
             this.PnlData.Controls.Add(this.lblNotes);
+            this.PnlData.Controls.Add(this.lblDisplayOrder);
+            this.PnlData.Controls.Add(this.DisplayOrder);
             this.PnlData.Controls.Add(this.Id);
             this.PnlData.Controls.Add(this.lblNo);
             this.PnlData.Location = new System.Drawing.Point(32, 121);
             this.PnlData.Name = "PnlData";
-            this.PnlData.Size = new System.Drawing.Size(614, 118);
+            this.PnlData.Size = new System.Drawing.Size(614, 130);
             this.PnlData.TabIndex = 77;
             // 
             // SubjectName
@@ -167,7 +171,7 @@
             this.Description.Location = new System.Drawing.Point(23, 32);
             this.Description.Multiline = true;
             this.Description.Name = "Description";
-            this.Description.Size = new System.Drawing.Size(526, 67);
+            this.Description.Size = new System.Drawing.Size(526, 52);
             this.Description.TabIndex = 87;
             this.Description.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             // 
@@ -180,6 +184,26 @@
             this.lblNotes.Size = new System.Drawing.Size(37, 13);
             this.lblNotes.TabIndex = 86;
             this.lblNotes.Text = "الوصف";
+            // 
+            // lblDisplayOrder
+            // 
+            this.lblDisplayOrder.AutoSize = true;
+            this.lblDisplayOrder.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(43)))), ((int)(((byte)(79)))), ((int)(((byte)(88)))));
+            this.lblDisplayOrder.Location = new System.Drawing.Point(520, 92);
+            this.lblDisplayOrder.Name = "lblDisplayOrder";
+            this.lblDisplayOrder.Size = new System.Drawing.Size(72, 13);
+            this.lblDisplayOrder.TabIndex = 115;
+            this.lblDisplayOrder.Text = "ترتيب العرض";
+            // 
+            // DisplayOrder
+            // 
+            this.DisplayOrder.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(192)))), ((int)(((byte)(255)))), ((int)(((byte)(192)))));
+            this.DisplayOrder.Location = new System.Drawing.Point(400, 88);
+            this.DisplayOrder.Name = "DisplayOrder";
+            this.DisplayOrder.Size = new System.Drawing.Size(100, 20);
+            this.DisplayOrder.TabIndex = 116;
+            this.DisplayOrder.Text = "0";
+            this.DisplayOrder.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             // 
             // Id
             // 
@@ -326,6 +350,8 @@
         private System.Windows.Forms.Label lblId;
         private System.Windows.Forms.TextBox Description;
         private System.Windows.Forms.Label lblNotes;
+        private System.Windows.Forms.Label lblDisplayOrder;
+        private System.Windows.Forms.TextBox DisplayOrder;
         private System.Windows.Forms.TextBox Id;
         private System.Windows.Forms.Label lblNo;
         private System.Windows.Forms.Panel PnlBut;

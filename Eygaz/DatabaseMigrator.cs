@@ -158,15 +158,12 @@ CREATE TABLE IF NOT EXISTS SchemaMigrations (
 
         private static void ApplySingleMigration(SQLiteConnection connection, string version, string sqlScript)
         {
+            ExecuteMigrationStatements(connection, sqlScript);
+
             using (var transaction = connection.BeginTransaction())
             {
                 try
                 {
-                    using (var scriptCommand = new SQLiteCommand(sqlScript, connection, transaction))
-                    {
-                        scriptCommand.ExecuteNonQuery();
-                    }
-
                     using (var logCommand = new SQLiteCommand(
                         "INSERT INTO " + MigrationTableName + " (Version, AppliedAt) VALUES (@version, datetime('now','localtime'));",
                         connection,
@@ -184,6 +181,103 @@ CREATE TABLE IF NOT EXISTS SchemaMigrations (
                     throw;
                 }
             }
+        }
+
+        /// <summary>
+        /// Runs each SQL statement separately so a benign "already exists" failure does not roll back
+        /// earlier statements in the same migration file.
+        /// </summary>
+        private static void ExecuteMigrationStatements(SQLiteConnection connection, string sqlScript)
+        {
+            foreach (string statement in SplitSqlStatements(sqlScript))
+            {
+                if (string.IsNullOrWhiteSpace(statement))
+                    continue;
+
+                try
+                {
+                    using (var command = new SQLiteCommand(statement, connection))
+                    {
+                        command.ExecuteNonQuery();
+                    }
+                }
+                catch (SQLiteException ex) when (IsIgnorableMigrationError(ex))
+                {
+                    // Table/column/index already present (e.g. manual change or re-run after partial apply).
+                }
+            }
+        }
+
+        /// <summary>
+        /// Splits a script on ';' boundaries outside of single- and double-quoted literals.
+        /// </summary>
+        private static IEnumerable<string> SplitSqlStatements(string sqlScript)
+        {
+            if (string.IsNullOrEmpty(sqlScript))
+                yield break;
+
+            var builder = new StringBuilder(sqlScript.Length);
+            bool inSingleQuote = false;
+            bool inDoubleQuote = false;
+
+            for (int i = 0; i < sqlScript.Length; i++)
+            {
+                char c = sqlScript[i];
+
+                if (c == '\'' && !inDoubleQuote)
+                {
+                    inSingleQuote = !inSingleQuote;
+                    builder.Append(c);
+                    continue;
+                }
+
+                if (c == '\"' && !inSingleQuote)
+                {
+                    inDoubleQuote = !inDoubleQuote;
+                    builder.Append(c);
+                    continue;
+                }
+
+                if (c == ';' && !inSingleQuote && !inDoubleQuote)
+                {
+                    string part = builder.ToString().Trim();
+                    if (part.Length > 0)
+                        yield return part;
+
+                    builder.Clear();
+                    continue;
+                }
+
+                builder.Append(c);
+            }
+
+            string tail = builder.ToString().Trim();
+            if (tail.Length > 0)
+                yield return tail;
+        }
+
+        /// <summary>
+        /// SQLite English messages for duplicate schema objects.
+        /// </summary>
+        private static bool IsIgnorableMigrationError(SQLiteException ex)
+        {
+            if (ex == null)
+                return false;
+
+            string msg = ex.Message;
+            if (string.IsNullOrEmpty(msg))
+                return false;
+
+            if (msg.IndexOf("already exists", StringComparison.OrdinalIgnoreCase) >= 0)
+                return true;
+
+            if (msg.IndexOf("duplicate column name", StringComparison.OrdinalIgnoreCase) >= 0)
+                return true;
+
+            if (msg.IndexOf("duplicate column", StringComparison.OrdinalIgnoreCase) >= 0)
+                return true;
+
+            return false;
         }
     }
 }

@@ -322,6 +322,9 @@
     <EmbeddedResource Include="FrmClassess.resx">
       <DependentUpon>FrmClassess.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="FrmComprehensiveGradeReport.resx">
+      <DependentUpon>FrmComprehensiveGradeReport.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="FrmStudent.resx">
       <DependentUpon>FrmStudent.cs</DependentUpon>
     </EmbeddedResource>

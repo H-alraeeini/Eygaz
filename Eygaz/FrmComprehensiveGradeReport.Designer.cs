@@ -40,7 +40,7 @@ namespace Eygaz
             // CmbTerm
             // 
             this.CmbTerm.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.CmbTerm.Location = new System.Drawing.Point(570, 65);
+            this.CmbTerm.Location = new System.Drawing.Point(577, 65);
             this.CmbTerm.Name = "CmbTerm";
             this.CmbTerm.Size = new System.Drawing.Size(150, 21);
             this.CmbTerm.TabIndex = 1;
@@ -48,7 +48,7 @@ namespace Eygaz
             // CmbGradeYear
             // 
             this.CmbGradeYear.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.CmbGradeYear.Location = new System.Drawing.Point(495, 65);
+            this.CmbGradeYear.Location = new System.Drawing.Point(510, 65);
             this.CmbGradeYear.Name = "CmbGradeYear";
             this.CmbGradeYear.Size = new System.Drawing.Size(65, 21);
             this.CmbGradeYear.TabIndex = 9;
@@ -56,16 +56,16 @@ namespace Eygaz
             // CmbGradeMonth
             // 
             this.CmbGradeMonth.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.CmbGradeMonth.Location = new System.Drawing.Point(355, 65);
+            this.CmbGradeMonth.Location = new System.Drawing.Point(376, 65);
             this.CmbGradeMonth.Name = "CmbGradeMonth";
-            this.CmbGradeMonth.Size = new System.Drawing.Size(130, 21);
+            this.CmbGradeMonth.Size = new System.Drawing.Size(126, 21);
             this.CmbGradeMonth.TabIndex = 10;
             // 
             // TxtSearch
             // 
-            this.TxtSearch.Location = new System.Drawing.Point(280, 65);
+            this.TxtSearch.Location = new System.Drawing.Point(272, 65);
             this.TxtSearch.Name = "TxtSearch";
-            this.TxtSearch.Size = new System.Drawing.Size(160, 20);
+            this.TxtSearch.Size = new System.Drawing.Size(97, 20);
             this.TxtSearch.TabIndex = 2;
             // 
             // BtnShow
@@ -132,8 +132,6 @@ namespace Eygaz
             // 
             this.GrdSheet.GridControl = this.GVSheet;
             this.GrdSheet.Name = "GrdSheet";
-            this.GrdSheet.OptionsCustomization.AllowColumnMoving = true;
-            this.GrdSheet.OptionsCustomization.AllowColumnResizing = true;
             this.GrdSheet.OptionsView.ColumnAutoWidth = false;
             // 
             // FrmComprehensiveGradeReport
@@ -157,6 +155,7 @@ namespace Eygaz
             ((System.ComponentModel.ISupportInitialize)(this.GrdSheet)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
+
         }
 
         private System.Windows.Forms.ComboBox CmbClass;

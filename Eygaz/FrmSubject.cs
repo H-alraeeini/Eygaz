@@ -189,6 +189,7 @@ namespace Eygaz
             {
                 f.ClearControl(PnlData);
                 f.Dsbl_Enbl_Cntrl(PnlData, true);
+                ApplySubjectEditingRestrictions();
                 f.Dsbl_Enbl_But(PnlBut, false);
                 string Sql = "SELECT MAX(" + Pky + ")  FROM " + Tbl + Whr;
                 string maxid = f.GetScalar(Sql);
@@ -234,6 +235,7 @@ namespace Eygaz
             try
             {
                 f.Dsbl_Enbl_Cntrl(PnlData, true);
+                ApplySubjectEditingRestrictions();
                 f.Dsbl_Enbl_But(PnlBut, false);
                 Id.Enabled = false;
                 Id.ReadOnly = true;
@@ -390,6 +392,53 @@ namespace Eygaz
                 DataGridSelect();
             }
             catch { }
+        }
+
+        /// <summary>
+        /// مادة المواظبة / الدرجات المستمدة من الحضور تُعرَف بالوصف أو الاسم؛ الاسم يجب أن يبقى كما يتوقعه AttendanceHelper.
+        /// يُسمح بتعديل ترتيب العرض والوصف والحالة دون تغيير الاسم.
+        /// </summary>
+        private static bool IsAttendanceDerivedSubject(string subjectName, string description)
+        {
+            string name = (subjectName ?? string.Empty).Trim();
+            string desc = (description ?? string.Empty).Trim();
+
+            if (name.Length > 0 && name.StartsWith("\u0627\u0644\u0645\u0648\u0627\u0638\u0628\u0629", StringComparison.Ordinal))
+                return true;
+
+            if (desc.IndexOf("\u0645\u062d\u0633\u0648\u0628\u0629", StringComparison.Ordinal) >= 0
+                && (desc.IndexOf("\u0627\u0644\u062d\u0636\u0648\u0631", StringComparison.Ordinal) >= 0
+                    || desc.IndexOf("\u063a\u064a\u0627\u0628", StringComparison.Ordinal) >= 0))
+                return true;
+
+            return false;
+        }
+
+        /// <summary>
+        /// بعد <see cref="Func.Dsbl_Enbl_Cntrl"/> في وضع التعديل: يضمن إمكانية تعديل ترتيب العرض للمواد المحسوبة من الحضور.
+        /// </summary>
+        private void ApplySubjectEditingRestrictions()
+        {
+            bool derived = IsAttendanceDerivedSubject(SubjectName.Text, Description.Text);
+
+            if (derived)
+            {
+                SubjectName.ReadOnly = true;
+                Description.ReadOnly = false;
+                DisplayOrder.ReadOnly = false;
+                DisplayOrder.Enabled = true;
+                IsActive.Enabled = true;
+            }
+            else
+            {
+                SubjectName.ReadOnly = false;
+                Description.ReadOnly = false;
+                DisplayOrder.ReadOnly = false;
+                DisplayOrder.Enabled = true;
+                IsActive.Enabled = true;
+            }
+
+            Id.ReadOnly = true;
         }
     }
 }

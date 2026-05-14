@@ -248,6 +248,7 @@ namespace Eygaz
             GrdSheet.OptionsBehavior.Editable = false;
             GrdSheet.OptionsView.ShowGroupPanel = false;
             GrdSheet.OptionsView.ColumnAutoWidth = false;
+            GrdSheet.OptionsCustomization.AllowColumnResizing = true;
             ConfigureGradeSheetPrintDefaultsOnView();
 
             foreach (GridColumn col in GrdSheet.Columns)
@@ -271,6 +272,9 @@ namespace Eygaz
                 else if (isSubject)
                     col.MinWidth = SubjectPrintMinColumnWidth;
 
+                col.OptionsColumn.AllowSize = true;
+                col.OptionsColumn.FixedWidth = false;
+
                 if (isSubject)
                 {
                     double cap = 100;
@@ -280,7 +284,6 @@ namespace Eygaz
                 }
             }
 
-            GrdSheet.BestFitColumns();
             ResizeCompactColumnsToMeasuredContent();
 
             foreach (GridColumn col in GrdSheet.Columns)
@@ -294,7 +297,6 @@ namespace Eygaz
                 if (!isSubject) continue;
                 if (col.Width < SubjectPrintMinColumnWidth)
                     col.Width = SubjectPrintMinColumnWidth;
-                col.OptionsColumn.FixedWidth = false;
             }
         }
 

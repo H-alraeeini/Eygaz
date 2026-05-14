@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Drawing;
+using System.Globalization;
 using DevExpress.XtraGrid.Views.Grid;
 using System.Windows.Forms;
 
@@ -28,15 +29,29 @@ namespace Eygaz
             CmbSubject.Enabled = false;
             CmbTerm.Items.AddRange(new object[] { "First", "Second", "Final" });
             CmbTerm.SelectedIndex = 0;
+
+            int currentYear = DateTime.Today.Year;
+            for (int yr = currentYear - 2; yr <= currentYear + 3; yr++)
+                CmbGradeYear.Items.Add(yr);
+            CmbGradeYear.SelectedItem = currentYear;
+
+            var arCulture = new CultureInfo("ar-SA");
+            CmbGradeMonth.Items.Clear();
+            for (int m = 1; m <= 12; m++)
+                CmbGradeMonth.Items.Add($"{m} - {arCulture.DateTimeFormat.GetMonthName(m)}");
+            CmbGradeMonth.SelectedIndex = DateTime.Today.Month - 1;
+
             DtExamDate.Value = DateTime.Today;
             EnsureHijriDateLabel();
             DtExamDate.ValueChanged += DtExamDate_ValueChanged;
             UpdateHijriDateLabel();
             TxtMaxScore.Text = "100";
-            LblStatus.Text = "«Œ — «·›’· + «· —„ À„ «÷€ÿ  Õ„Ì· «·ÿ·«».";
+            LblStatus.Text = "???? ????? + ????? ?? ???? ????? ??????.";
 
             CmbClass.SelectedIndexChanged += Filters_SelectedIndexChanged;
             CmbTerm.SelectedIndexChanged += Filters_SelectedIndexChanged;
+            CmbGradeYear.SelectedIndexChanged += Filters_SelectedIndexChanged;
+            CmbGradeMonth.SelectedIndexChanged += Filters_SelectedIndexChanged;
             GrdStudents.RowStyle += GrdStudents_RowStyle;
             GrdStudents.CellValueChanged += GrdStudents_CellValueChanged;
         }
@@ -49,7 +64,7 @@ namespace Eygaz
             lblHijriDate.AutoSize = true;
             lblHijriDate.ForeColor = Color.DarkSlateBlue;
             lblHijriDate.Font = new Font("Tahoma", 8F, FontStyle.Bold);
-            lblHijriDate.Location = new Point(222, 44);
+            lblHijriDate.Location = new Point(DtExamDate.Left, 44);
             lblHijriDate.Name = "lblHijriDate";
             Controls.Add(lblHijriDate);
             lblHijriDate.RightToLeft = RightToLeft.No;
@@ -68,19 +83,35 @@ namespace Eygaz
             lblHijriDate.Text = hijri;
         }
 
+        private int GetSelectedGradeYear()
+        {
+            if (CmbGradeYear.SelectedItem == null) return 0;
+            return Convert.ToInt32(CmbGradeYear.SelectedItem);
+        }
+
+        private int GetSelectedGradeMonth() => CmbGradeMonth.SelectedIndex + 1;
+
         private void BtnLoadStudents_Click(object sender, EventArgs e)
         {
             if (CmbClass.SelectedValue == null || CmbTerm.SelectedItem == null)
             {
-                MessageBox.Show("Ì—ÃÏ «Œ Ì«— «·›’· + «· —„.");
+                MessageBox.Show("???? ?????? ????? + ?????.");
+                return;
+            }
+
+            int gradeYear = GetSelectedGradeYear();
+            int gradeMonth = GetSelectedGradeMonth();
+            if (gradeYear <= 0 || gradeMonth < 1 || gradeMonth > 12)
+            {
+                MessageBox.Show("\u064a\u0631\u062c\u0649 \u0627\u062e\u062a\u064a\u0627\u0631 \u0627\u0644\u0633\u0646\u0629 \u0648\u0627\u0644\u0634\u0647\u0631 \u0644\u0645\u062a\u0627\u0628\u0639\u0629 \u0627\u0644\u062f\u0631\u062c\u0627\u062a.");
                 return;
             }
 
             if (isDirty)
             {
                 DialogResult confirm = MessageBox.Show(
-                    "·œÌﬂ  €ÌÌ—«  €Ì— „Õ›ÊŸ…° Â·  —Ìœ «·„ «»⁄… Ê›ﬁœ«‰Â«ø",
-                    " ‰»ÌÂ",
+                    "???? ??????? ??? ?????? ?? ???? ???????? ????????",
+                    "?????",
                     MessageBoxButtons.YesNo,
                     MessageBoxIcon.Warning);
                 if (confirm != DialogResult.Yes) return;
@@ -89,7 +120,7 @@ namespace Eygaz
             int classId = Convert.ToInt32(CmbClass.SelectedValue);
             string term = CmbTerm.SelectedItem.ToString();
 
-            DataTable dt = helper.GetGradeEntryMatrix(classId, term);
+            DataTable dt = helper.GetGradeEntryMatrix(classId, term, gradeYear, gradeMonth);
             if (dt == null) return;
 
             subjectColumnToId.Clear();
@@ -102,14 +133,14 @@ namespace Eygaz
                     subjectColumnToId[col.ColumnName] = subjectId;
             }
 
-            lastSurahSubjectId = helper.GetPreferredLastSurahSubjectId(classId, term);
+            lastSurahSubjectId = helper.GetPreferredLastSurahSubjectId(classId, term, gradeYear, gradeMonth);
 
             GVStudents.DataSource = dt;
             GrdStudents.BestFitColumns();
             if (GrdStudents.Columns["StudentId"] != null) GrdStudents.Columns["StudentId"].Visible = false;
-            if (GrdStudents.Columns["StudentName"] != null) GrdStudents.Columns["StudentName"].Caption = "«”„ «·ÿ«·»";
+            if (GrdStudents.Columns["StudentName"] != null) GrdStudents.Columns["StudentName"].Caption = "??? ??????";
             if (GrdStudents.Columns["StudentName"] != null) GrdStudents.Columns["StudentName"].OptionsColumn.ReadOnly = true;
-            if (GrdStudents.Columns["LastSurah"] != null) GrdStudents.Columns["LastSurah"].Caption = "¬Œ— ”Ê—…";
+            if (GrdStudents.Columns["LastSurah"] != null) GrdStudents.Columns["LastSurah"].Caption = "??? ????";
 
             foreach (var col in subjectColumnToId)
             {
@@ -120,7 +151,7 @@ namespace Eygaz
 
             if (lastSurahSubjectId > 0)
             {
-                int examId = helper.GetExamId(classId, lastSurahSubjectId, term);
+                int examId = helper.GetExamId(classId, lastSurahSubjectId, term, gradeYear, gradeMonth);
                 if (examId > 0)
                     TxtMaxScore.Text = helper.GetExamMaxScore(examId).ToString("0.##");
             }
@@ -140,7 +171,7 @@ namespace Eygaz
                 }
             }
 
-            LblStatus.Text = $" „  Õ„Ì· {dt.Rows.Count} ÿ«·»« Ê {subjectColumnToId.Count} „«œ… ? œ—Ã«  „”Ã·…: {existingScores}.";
+            LblStatus.Text = $"?? ????? {dt.Rows.Count} ?????? ? {subjectColumnToId.Count} ???? ? ????? ?????: {existingScores}.";
             isDirty = false;
         }
 
@@ -148,32 +179,40 @@ namespace Eygaz
         {
             if (!AuthSession.HasPermission("grades.manage"))
             {
-                MessageBox.Show("·Ì” ·œÌﬂ ’·«ÕÌ… ≈œ«—… «·œ—Ã« .");
+                MessageBox.Show("??? ???? ?????? ????? ???????.");
                 return;
             }
 
             if (CmbClass.SelectedValue == null || CmbTerm.SelectedItem == null)
             {
-                MessageBox.Show("Ì—ÃÏ  ⁄»∆… »Ì«‰«  «·«Œ »«—.");
+                MessageBox.Show("???? ????? ?????? ????????.");
+                return;
+            }
+
+            int gradeYearSave = GetSelectedGradeYear();
+            int gradeMonthSave = GetSelectedGradeMonth();
+            if (gradeYearSave <= 0 || gradeMonthSave < 1 || gradeMonthSave > 12)
+            {
+                MessageBox.Show("\u064a\u0631\u062c\u0649 \u0627\u062e\u062a\u064a\u0627\u0631 \u0627\u0644\u0633\u0646\u0629 \u0648\u0627\u0644\u0634\u0647\u0631.");
                 return;
             }
 
             if (!double.TryParse(TxtMaxScore.Text, out double maxScore) || maxScore <= 0)
             {
-                MessageBox.Show("«·œ—Ã… «·⁄Ÿ„Ï €Ì— ’ÕÌÕ….");
+                MessageBox.Show("?????? ?????? ??? ?????.");
                 return;
             }
 
             DataTable students = GVStudents.DataSource as DataTable;
             if (students == null || students.Rows.Count == 0)
             {
-                MessageBox.Show("·« ÌÊÃœ ÿ·«».");
+                MessageBox.Show("?? ???? ????.");
                 return;
             }
 
             if (subjectColumnToId.Count == 0)
             {
-                MessageBox.Show("·«  ÊÃœ „Ê«œ ··Õ›Ÿ.");
+                MessageBox.Show("?? ???? ???? ?????.");
                 return;
             }
 
@@ -200,7 +239,7 @@ namespace Eygaz
                         string subjectName = GrdStudents.Columns[subject.Key] == null
                             ? subject.Key
                             : GrdStudents.Columns[subject.Key].Caption;
-                        MessageBox.Show("œ—Ã… €Ì— ’ÕÌÕ… ··ÿ«·»: " + row["StudentName"] + " ? «·„«œ…: " + subjectName);
+                        MessageBox.Show("???? ??? ????? ??????: " + row["StudentName"] + " ? ??????: " + subjectName);
                         return;
                     }
                 }
@@ -209,8 +248,8 @@ namespace Eygaz
             if (totalCells > 0 && (blankCount * 100.0 / totalCells) > 30.0)
             {
                 DialogResult confirm = MessageBox.Show(
-                    $"Â‰«ﬂ {blankCount} Œ·Ì… œ—Ã«  ›«—€…. Â·  —Ìœ «·„ «»⁄…ø",
-                    " √ﬂÌœ «·Õ›Ÿ",
+                    $"???? {blankCount} ???? ????? ?????. ?? ???? ????????",
+                    "????? ?????",
                     MessageBoxButtons.YesNo,
                     MessageBoxIcon.Question);
                 if (confirm != DialogResult.Yes) return;
@@ -219,6 +258,8 @@ namespace Eygaz
             bool ok = helper.SaveGradeEntryMatrix(
                 classId,
                 term,
+                gradeYearSave,
+                gradeMonthSave,
                 students,
                 subjectColumnToId,
                 lastSurahSubjectId > 0 ? (int?)lastSurahSubjectId : null,
@@ -228,11 +269,11 @@ namespace Eygaz
                 out string errorMessage);
             if (!ok)
             {
-                MessageBox.Show("›‘· «·Õ›Ÿ: " + errorMessage);
+                MessageBox.Show("??? ?????: " + errorMessage);
                 return;
             }
 
-            MessageBox.Show(" „ Õ›Ÿ «·œ—Ã«  »‰Ã«Õ.");
+            MessageBox.Show("?? ??? ??????? ?????.");
             isDirty = false;
             BtnLoadStudents_Click(sender, e);
         }

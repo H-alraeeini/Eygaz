@@ -525,7 +525,7 @@ namespace Eygaz
                             return false;
                         }
 
-                        int examId = GetExamId(classId, disciplineSubjectId, term, cn, tx);
+                        int examId = GetExamId(classId, disciplineSubjectId, term, cn, tx, null, null);
                         if (examId <= 0)
                         {
                             examId = CreateExam(
@@ -535,6 +535,8 @@ namespace Eygaz
                                 string.IsNullOrWhiteSpace(examDate) ? DateTime.Today.ToString("yyyy-MM-dd") : examDate,
                                 maxScore > 0 ? maxScore : 100,
                                 "درجة المواظبة  (محسوبة من الحضور والغياب)",
+                                0,
+                                0,
                                 cn,
                                 tx);
                         }
@@ -704,6 +706,60 @@ namespace Eygaz
                 {
                     using (var cmd = new SQLiteCommand("ALTER TABLE Exams ADD COLUMN ExamDateHijri TEXT DEFAULT '';", cn))
                         cmd.ExecuteNonQuery();
+                }
+
+                EnsureExamsGradeYearMonthColumns(cn);
+            }
+        }
+
+        /// <summary>
+        /// يضيف أعمدة السنة/الشهر لجدول الاختبارات ويُحدّث البيانات القديمة (ما عدا مادة المواظبة التي تبقى 0/0 على مستوى الترم).
+        /// </summary>
+        private void EnsureExamsGradeYearMonthColumns(SQLiteConnection cn)
+        {
+            if (!HasColumn(cn, "Exams", "GradeYear"))
+            {
+                using (var cmd = new SQLiteCommand("ALTER TABLE Exams ADD COLUMN GradeYear INTEGER NOT NULL DEFAULT 0;", cn))
+                    cmd.ExecuteNonQuery();
+            }
+
+            if (!HasColumn(cn, "Exams", "GradeMonth"))
+            {
+                using (var cmd = new SQLiteCommand("ALTER TABLE Exams ADD COLUMN GradeMonth INTEGER NOT NULL DEFAULT 0;", cn))
+                    cmd.ExecuteNonQuery();
+            }
+
+            int disciplineSubjectId = 0;
+            using (var discCmd = new SQLiteCommand("SELECT Id FROM Subjects WHERE SubjectName = @name LIMIT 1;", cn))
+            {
+                discCmd.Parameters.AddWithValue("@name", DisciplineSubjectName);
+                object d = discCmd.ExecuteScalar();
+                if (d != null && d != DBNull.Value)
+                    disciplineSubjectId = Convert.ToInt32(d);
+            }
+
+            string notDisc = disciplineSubjectId > 0 ? " AND SubjectId <> @discId " : "";
+            using (var backfill = new SQLiteCommand($@"
+                UPDATE Exams
+                SET
+                    GradeYear = CAST(strftime('%Y', COALESCE(NULLIF(TRIM(ExamDate), ''), '1970-01-01')) AS INTEGER),
+                    GradeMonth = CAST(strftime('%m', COALESCE(NULLIF(TRIM(ExamDate), ''), '1970-01-01')) AS INTEGER)
+                WHERE GradeYear = 0
+                  AND GradeMonth = 0
+                  {notDisc};", cn))
+            {
+                if (disciplineSubjectId > 0)
+                    backfill.Parameters.AddWithValue("@discId", disciplineSubjectId);
+                backfill.ExecuteNonQuery();
+            }
+
+            if (disciplineSubjectId > 0)
+            {
+                using (var discReset = new SQLiteCommand(
+                    "UPDATE Exams SET GradeYear = 0, GradeMonth = 0 WHERE SubjectId = @discId;", cn))
+                {
+                    discReset.Parameters.AddWithValue("@discId", disciplineSubjectId);
+                    discReset.ExecuteNonQuery();
                 }
             }
         }
@@ -1346,13 +1402,13 @@ namespace Eygaz
         // =============================================
         // 45. إضافة اختبار جديد
         // =============================================
-        public int CreateExam(int subjectId, int classId, string term, string examDate, double maxScore, string description)
+        public int CreateExam(int subjectId, int classId, string term, string examDate, double maxScore, string description, int gradeYear = 0, int gradeMonth = 0)
         {
             EnsureHijriDateColumns();
             string examDateHijri = ToHijriDateStringFromGregorianIso(examDate);
             string sql = @"
-                INSERT INTO Exams (SubjectId, ClassId, Term, ExamDate, ExamDateHijri, MaxScore, Description)
-                VALUES (@subjectId, @classId, @term, @examDate, @examDateHijri, @maxScore, @description);";
+                INSERT INTO Exams (SubjectId, ClassId, Term, ExamDate, ExamDateHijri, MaxScore, Description, GradeYear, GradeMonth)
+                VALUES (@subjectId, @classId, @term, @examDate, @examDateHijri, @maxScore, @description, @gradeYear, @gradeMonth);";
 
             var parameters = new Dictionary<string, object>
             {
@@ -1362,13 +1418,19 @@ namespace Eygaz
                 { "@examDate", examDate },
                 { "@examDateHijri", examDateHijri },
                 { "@maxScore", maxScore },
-                { "@description", description ?? "" }
+                { "@description", description ?? "" },
+                { "@gradeYear", gradeYear },
+                { "@gradeMonth", gradeMonth }
             };
 
             int rows = f.ExecuteNonQuery(sql, parameters);
             if (rows <= 0) return -1;
 
-            string idStr = f.GetScalar($@"SELECT max(id) from Exams where ClassId = {classId} and  SubjectId = {subjectId}  and term='{term}'");
+            string periodFilter = gradeYear == 0 && gradeMonth == 0
+                ? " AND GradeYear = 0 AND GradeMonth = 0 "
+                : $" AND GradeYear = {gradeYear} AND GradeMonth = {gradeMonth} ";
+
+            string idStr = f.GetScalar($@"SELECT max(id) from Exams where ClassId = {classId} and  SubjectId = {subjectId}  and term='{term.Replace("'", "''")}' {periodFilter}");
 
             return string.IsNullOrEmpty(idStr) ? -1 : int.Parse(idStr);
         }
@@ -1539,12 +1601,14 @@ namespace Eygaz
             return f.ExecuteNonQuery(sql, parameters) >= 0;
         }
 
-        public int GetExamId(int classId, int subjectId, string term)
+        public int GetExamId(int classId, int subjectId, string term, int gradeYear, int gradeMonth)
         {
+            EnsureHijriDateColumns();
             string sql = @"
                 SELECT Id
                 FROM Exams
                 WHERE ClassId = @classId AND SubjectId = @subjectId AND Term = @term
+                  AND GradeYear = @gradeYear AND GradeMonth = @gradeMonth
                 ORDER BY ExamDate DESC, Id DESC
                 LIMIT 1;";
 
@@ -1552,7 +1616,9 @@ namespace Eygaz
             {
                 { "@classId", classId },
                 { "@subjectId", subjectId },
-                { "@term", term ?? "" }
+                { "@term", term ?? "" },
+                { "@gradeYear", gradeYear },
+                { "@gradeMonth", gradeMonth }
             });
 
             return string.IsNullOrWhiteSpace(id) ? 0 : Convert.ToInt32(id);
@@ -1601,8 +1667,10 @@ namespace Eygaz
             });
         }
 
-        public DataTable GetGradeEntryMatrix(int classId, string term)
+        public DataTable GetGradeEntryMatrix(int classId, string term, int gradeYear, int gradeMonth)
         {
+            EnsureHijriDateColumns();
+
             DataTable students = f.GetData(@"
                 SELECT Id AS StudentId, FullName AS StudentName
                 FROM Students
@@ -1624,11 +1692,15 @@ namespace Eygaz
                 FROM ExamResults er
                 INNER JOIN Exams e ON e.Id = er.ExamId
                 WHERE e.ClassId = @classId
-                  AND e.Term = @term;",
+                  AND e.Term = @term
+                  AND e.GradeYear = @gradeYear
+                  AND e.GradeMonth = @gradeMonth;",
                 new Dictionary<string, object>
                 {
                     { "@classId", classId },
-                    { "@term", term ?? "" }
+                    { "@term", term ?? "" },
+                    { "@gradeYear", gradeYear },
+                    { "@gradeMonth", gradeMonth }
                 });
 
             DataTable matrix = new DataTable();
@@ -1662,7 +1734,7 @@ namespace Eygaz
                 }
             }
 
-            int preferredLastSurahSubjectId = GetPreferredLastSurahSubjectId(classId, term);
+            int preferredLastSurahSubjectId = GetPreferredLastSurahSubjectId(classId, term, gradeYear, gradeMonth);
 
             if (students != null)
             {
@@ -1714,7 +1786,7 @@ namespace Eygaz
             return matrix;
         }
 
-        public int GetPreferredLastSurahSubjectId(int classId, string term)
+        public int GetPreferredLastSurahSubjectId(int classId, string term, int gradeYear, int gradeMonth)
         {
             string fromSaved = f.GetScalar(@"
                 SELECT e.SubjectId
@@ -1722,6 +1794,8 @@ namespace Eygaz
                 INNER JOIN Exams e ON e.Id = er.ExamId
                 WHERE e.ClassId = @classId
                   AND e.Term = @term
+                  AND e.GradeYear = @gradeYear
+                  AND e.GradeMonth = @gradeMonth
                   AND er.LastSurah IS NOT NULL
                   AND TRIM(er.LastSurah) <> ''
                 ORDER BY e.ExamDate DESC, e.Id DESC
@@ -1729,7 +1803,9 @@ namespace Eygaz
                 new Dictionary<string, object>
                 {
                     { "@classId", classId },
-                    { "@term", term ?? "" }
+                    { "@term", term ?? "" },
+                    { "@gradeYear", gradeYear },
+                    { "@gradeMonth", gradeMonth }
                 });
 
             if (!string.IsNullOrWhiteSpace(fromSaved))
@@ -1760,6 +1836,8 @@ namespace Eygaz
         public bool SaveGradeEntryMatrix(
             int classId,
             string term,
+            int gradeYear,
+            int gradeMonth,
             DataTable matrixRows,
             Dictionary<string, int> subjectColumns,
             int? lastSurahSubjectId,
@@ -1769,6 +1847,14 @@ namespace Eygaz
             out string errorMessage)
         {
             errorMessage = "";
+            EnsureHijriDateColumns();
+
+            if (gradeYear <= 0 || gradeMonth < 1 || gradeMonth > 12)
+            {
+                errorMessage = "السنة أو الشهر غير صالحين لحفظ الدرجات الشهرية.";
+                return false;
+            }
+
             if (matrixRows == null)
             {
                 errorMessage = "لا توجد بيانات للحفظ.";
@@ -1795,10 +1881,10 @@ namespace Eygaz
                         var examIdsBySubject = new Dictionary<int, int>();
                         foreach (int subjectId in subjectColumns.Values.Distinct())
                         {
-                            int examId = GetExamId(classId, subjectId, term, cn, tx);
+                            int examId = GetExamId(classId, subjectId, term, cn, tx, gradeYear, gradeMonth);
                             if (examId <= 0)
                             {
-                                examId = CreateExam(subjectId, classId, term, examDate, maxScore, description, cn, tx);
+                                examId = CreateExam(subjectId, classId, term, examDate, maxScore, description, gradeYear, gradeMonth, cn, tx);
                             }
 
                             if (examId <= 0)
@@ -1865,18 +1951,28 @@ namespace Eygaz
             }
         }
 
-        private int GetExamId(int classId, int subjectId, string term, SQLiteConnection cn, SQLiteTransaction tx)
+        private int GetExamId(int classId, int subjectId, string term, SQLiteConnection cn, SQLiteTransaction tx, int? gradeYear = null, int? gradeMonth = null)
         {
-            using (var cmd = new SQLiteCommand(@"
+            string periodClause = gradeYear.HasValue && gradeMonth.HasValue
+                ? " AND GradeYear = @gradeYear AND GradeMonth = @gradeMonth "
+                : " AND GradeYear = 0 AND GradeMonth = 0 ";
+
+            using (var cmd = new SQLiteCommand($@"
                 SELECT Id
                 FROM Exams
                 WHERE ClassId = @classId AND SubjectId = @subjectId AND Term = @term
+                {periodClause}
                 ORDER BY ExamDate DESC, Id DESC
                 LIMIT 1;", cn, tx))
             {
                 cmd.Parameters.AddWithValue("@classId", classId);
                 cmd.Parameters.AddWithValue("@subjectId", subjectId);
                 cmd.Parameters.AddWithValue("@term", term ?? "");
+                if (gradeYear.HasValue && gradeMonth.HasValue)
+                {
+                    cmd.Parameters.AddWithValue("@gradeYear", gradeYear.Value);
+                    cmd.Parameters.AddWithValue("@gradeMonth", gradeMonth.Value);
+                }
 
                 object value = cmd.ExecuteScalar();
                 if (value == null || value == DBNull.Value) return 0;
@@ -1891,13 +1987,15 @@ namespace Eygaz
             string examDate,
             double maxScore,
             string description,
+            int gradeYear,
+            int gradeMonth,
             SQLiteConnection cn,
             SQLiteTransaction tx)
         {
             string examDateHijri = ToHijriDateStringFromGregorianIso(examDate);
             using (var insertCmd = new SQLiteCommand(@"
-                INSERT INTO Exams (SubjectId, ClassId, Term, ExamDate, ExamDateHijri, MaxScore, Description)
-                VALUES (@subjectId, @classId, @term, @examDate, @examDateHijri, @maxScore, @description);", cn, tx))
+                INSERT INTO Exams (SubjectId, ClassId, Term, ExamDate, ExamDateHijri, MaxScore, Description, GradeYear, GradeMonth)
+                VALUES (@subjectId, @classId, @term, @examDate, @examDateHijri, @maxScore, @description, @gradeYear, @gradeMonth);", cn, tx))
             {
                 insertCmd.Parameters.AddWithValue("@subjectId", subjectId);
                 insertCmd.Parameters.AddWithValue("@classId", classId);
@@ -1906,6 +2004,8 @@ namespace Eygaz
                 insertCmd.Parameters.AddWithValue("@examDateHijri", examDateHijri);
                 insertCmd.Parameters.AddWithValue("@maxScore", maxScore);
                 insertCmd.Parameters.AddWithValue("@description", description ?? "");
+                insertCmd.Parameters.AddWithValue("@gradeYear", gradeYear);
+                insertCmd.Parameters.AddWithValue("@gradeMonth", gradeMonth);
 
                 int rows = insertCmd.ExecuteNonQuery();
                 if (rows <= 0) return -1;

@@ -153,7 +153,7 @@ namespace Eygaz
             }
 
             var ordered = table.AsEnumerable()
-                .OrderByDescending(r => r.Field<double>(ColTotal))
+                .OrderByDescending(r => r.Field<double>(ColPercent))
                 .ThenBy(r => r.Field<string>(ColName))
                 .ToList();
 
@@ -174,7 +174,7 @@ namespace Eygaz
             }
 
             DataView dv = table.DefaultView;
-            dv.Sort = $"{ColTotal} DESC, {ColName} ASC";
+            dv.Sort = $"{ColPercent} DESC, {ColName} ASC";
             return dv.ToTable();
         }
 

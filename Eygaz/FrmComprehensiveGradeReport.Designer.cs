@@ -1,4 +1,4 @@
-﻿namespace Eygaz
+namespace Eygaz
 {
     partial class FrmComprehensiveGradeReport
     {
@@ -114,7 +114,9 @@
             // 
             this.GrdSheet.GridControl = this.GVSheet;
             this.GrdSheet.Name = "GrdSheet";
-            this.GrdSheet.OptionsView.ShowGroupPanel = false;
+            this.GrdSheet.OptionsCustomization.AllowColumnMoving = true;
+            this.GrdSheet.OptionsCustomization.AllowColumnResizing = true;
+            this.GrdSheet.OptionsView.ColumnAutoWidth = false;
             // 
             // FrmComprehensiveGradeReport
             // 

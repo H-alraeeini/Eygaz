@@ -1491,14 +1491,16 @@ namespace Eygaz
                 SELECT
                     s.Id AS StudentId,
                     s.FullName AS StudentName,
-                    sub.SubjectName AS SubjectName,
+                    sub.SubjectName,
+                    sub.Id AS SubjectId,
                     e.MaxScore AS MaxScore,
                     er.Score AS Score,
                     er.LastSurah AS LastSurah
                 FROM Students s
-                LEFT JOIN Exams e ON e.ClassId = @classId AND e.Term = @term
+                LEFT JOIN StudentSubjects ss ON ss.StudentId = s.Id
+                LEFT JOIN Subjects sub ON sub.Id = ss.SubjectId
+                LEFT JOIN Exams e ON e.SubjectId = ss.SubjectId AND e.ClassId = @classId AND e.Term = @term
                 LEFT JOIN ExamResults er ON er.ExamId = e.Id AND er.StudentId = s.Id
-                LEFT JOIN Subjects sub ON sub.Id = e.SubjectId
                 WHERE s.ClassId = @classId
                   AND s.IsActive = 0
                   AND (@studentName = '' OR s.FullName LIKE '%' || @studentName || '%')
@@ -1609,10 +1611,13 @@ namespace Eygaz
                 new Dictionary<string, object> { { "@classId", classId } });
 
             DataTable subjects = f.GetData(@"
-                SELECT Id AS SubjectId, SubjectName
-                FROM Subjects
-                WHERE IsActive = 0
-                ORDER BY SubjectName;");
+                SELECT DISTINCT sub.Id AS SubjectId, sub.SubjectName
+                FROM StudentSubjects ss
+                INNER JOIN Students s ON s.Id = ss.StudentId
+                INNER JOIN Subjects sub ON sub.Id = ss.SubjectId
+                WHERE s.ClassId = @classId
+                ORDER BY sub.SubjectName;",
+                new Dictionary<string, object> { { "@classId", classId } });
 
             DataTable results = f.GetData(@"
                 SELECT er.StudentId, e.SubjectId, er.Score, er.LastSurah
@@ -1998,6 +2003,86 @@ namespace Eygaz
                     }
                 }
             }
+        }
+
+    // =============================================
+    // 52. StudentSubjects - ربط الطالب بالمواد
+    // =============================================
+    public List<int> GetStudentSubjectIds(int studentId)
+    {
+            var ids = new List<int>();
+            DataTable dt = f.GetData($"SELECT SubjectId FROM StudentSubjects WHERE StudentId = {studentId}");
+            if (dt != null)
+            {
+                foreach (DataRow row in dt.Rows)
+                    ids.Add(Convert.ToInt32(row["SubjectId"]));
+            }
+            return ids;
+        }
+
+        public void SaveStudentSubjects(int studentId, List<int> subjectIds)
+        {
+            f.Trans($"DELETE FROM StudentSubjects WHERE StudentId = {studentId}");
+            foreach (int subjectId in subjectIds)
+            {
+                f.Trans($"INSERT INTO StudentSubjects (StudentId, SubjectId) VALUES ({studentId}, {subjectId})");
+            }
+        }
+
+        public int GetStudentSubjectCount(int studentId)
+        {
+            string cnt = f.GetScalar($"SELECT COUNT(*) FROM StudentSubjects WHERE StudentId = {studentId}");
+            return string.IsNullOrWhiteSpace(cnt) ? 0 : Convert.ToInt32(cnt);
+        }
+
+        public List<int> GetClassSubjectIds(int classId)
+        {
+            var ids = new List<int>();
+            DataTable dt = f.GetData($@"
+                SELECT DISTINCT ss.SubjectId
+                FROM StudentSubjects ss
+                INNER JOIN Students s ON s.Id = ss.StudentId
+                WHERE s.ClassId = {classId}");
+            if (dt != null)
+            {
+                foreach (DataRow row in dt.Rows)
+                    ids.Add(Convert.ToInt32(row["SubjectId"]));
+            }
+            return ids;
+        }
+
+        public Dictionary<int, List<int>> GetClassStudentsSubjects(int classId)
+        {
+            var map = new Dictionary<int, List<int>>();
+            DataTable dt = f.GetData($@"
+                SELECT ss.StudentId, ss.SubjectId
+                FROM StudentSubjects ss
+                INNER JOIN Students s ON s.Id = ss.StudentId
+                WHERE s.ClassId = {classId}");
+            if (dt != null)
+            {
+                foreach (DataRow row in dt.Rows)
+                {
+                    int sid = Convert.ToInt32(row["StudentId"]);
+                    int subjId = Convert.ToInt32(row["SubjectId"]);
+                    if (!map.ContainsKey(sid))
+                        map[sid] = new List<int>();
+                    if (!map[sid].Contains(subjId))
+                        map[sid].Add(subjId);
+                }
+            }
+            return map;
+        }
+
+        public DataTable GetAllSubjectsForClass(int classId)
+        {
+            return f.GetData($@"
+                SELECT DISTINCT sub.Id AS SubjectId, sub.SubjectName
+                FROM StudentSubjects ss
+                INNER JOIN Students s ON s.Id = ss.StudentId
+                INNER JOIN Subjects sub ON sub.Id = ss.SubjectId
+                WHERE s.ClassId = {classId}
+                ORDER BY sub.SubjectName");
         }
     }
 }

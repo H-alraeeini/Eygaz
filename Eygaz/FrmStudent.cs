@@ -9,11 +9,13 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
+
 namespace Eygaz
 {
     public partial class FrmStudent : MetroFramework.Forms.MetroForm
     {
         Func f = new Func();
+        private readonly AttendanceHelper helper = new AttendanceHelper();
         private bool saveOrEdit;
         private DataTable dt;
         private string Tbl;
@@ -493,18 +495,214 @@ namespace Eygaz
             Age.Text = age.ToString();
         }
 
+        private void BtnSubjects_Click(object sender, EventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(Id.Text) || !int.TryParse(Id.Text, out int studentId))
+            {
+                MessageBox.Show("الرجاء حفظ الطالب أولاً قبل تحديد المواد.", "تنبيه", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            DataTable allSubjects = f.GetData("SELECT Id, SubjectName FROM Subjects WHERE IsActive = 0 ORDER BY SubjectName");
+            if (allSubjects == null || allSubjects.Rows.Count == 0)
+            {
+                MessageBox.Show("لا توجد مواد متاحة.", "تنبيه", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            List<int> currentIds = helper.GetStudentSubjectIds(studentId);
+
+            Form dialog = new Form();
+            dialog.Text = "المواد الدراسية للطالب";
+            dialog.Size = new Size(350, 500);
+            dialog.StartPosition = FormStartPosition.CenterParent;
+            dialog.MinimizeBox = false;
+            dialog.MaximizeBox = false;
+            dialog.FormBorderStyle = FormBorderStyle.FixedDialog;
+            dialog.RightToLeft = RightToLeft.Yes;
+
+            CheckedListBox clb = new CheckedListBox();
+            clb.Dock = DockStyle.Fill;
+            clb.Font = new Font("Tahoma", 10F);
+            clb.CheckOnClick = true;
+
+            var subjectIdToName = new Dictionary<int, string>();
+            foreach (DataRow row in allSubjects.Rows)
+            {
+                int subjId = Convert.ToInt32(row["Id"]);
+                string name = row["SubjectName"].ToString();
+                subjectIdToName[subjId] = name;
+                bool checked_ = currentIds.Contains(subjId);
+                clb.Items.Add(name, checked_);
+            }
+
+            Panel btnPanel = new Panel();
+            btnPanel.Height = 40;
+            btnPanel.Dock = DockStyle.Bottom;
+
+            Button btnOk = new Button();
+            btnOk.Text = "حفظ";
+            btnOk.Font = new Font("Tahoma", 9F, FontStyle.Bold);
+            btnOk.Size = new Size(80, 30);
+            btnOk.Location = new Point(130, 5);
+            btnOk.DialogResult = DialogResult.OK;
+
+            Button btnCancel = new Button();
+            btnCancel.Text = "إلغاء";
+            btnCancel.Font = new Font("Tahoma", 9F);
+            btnCancel.Size = new Size(80, 30);
+            btnCancel.Location = new Point(30, 5);
+            btnCancel.DialogResult = DialogResult.Cancel;
+
+            btnPanel.Controls.Add(btnOk);
+            btnPanel.Controls.Add(btnCancel);
+
+            dialog.Controls.Add(clb);
+            dialog.Controls.Add(btnPanel);
+
+            if (dialog.ShowDialog() == DialogResult.OK)
+            {
+                var selectedIds = new List<int>();
+                int subjectIndex = 0;
+                foreach (DataRow row in allSubjects.Rows)
+                {
+                    int subjId = Convert.ToInt32(row["Id"]);
+                    if (clb.GetItemChecked(subjectIndex))
+                        selectedIds.Add(subjId);
+                    subjectIndex++;
+                }
+
+                helper.SaveStudentSubjects(studentId, selectedIds);
+                MessageBox.Show("تم حفظ المواد بنجاح.", "نجاح", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+
+            dialog.Dispose();
+        }
+
         private void Age_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Enter)
             {
-                e.SuppressKeyPress = true; // يمنع إدخال سطر جديد
+                e.SuppressKeyPress = true;
 
-                // هنا نفّذ ما تريد عند الضغط على Enter
                 Age_TextChanged(sender, e);
-
-                // أو أي دالة أخرى تريد تشغيلها
-                // SaveData();
             }
+        }
+
+        private void BtnBatchSubjects_Click(object sender, EventArgs e)
+        {
+            Form dialog = new Form();
+            dialog.Text = "تحديد جماعي للمواد";
+            dialog.Size = new Size(450, 550);
+            dialog.StartPosition = FormStartPosition.CenterParent;
+            dialog.MinimizeBox = false;
+            dialog.MaximizeBox = false;
+            dialog.FormBorderStyle = FormBorderStyle.FixedDialog;
+            dialog.RightToLeft = RightToLeft.Yes;
+
+            Panel topPanel = new Panel();
+            topPanel.Height = 40;
+            topPanel.Dock = DockStyle.Top;
+            topPanel.Padding = new Padding(10, 8, 10, 4);
+
+            Label lblClass = new Label();
+            lblClass.Text = "اختر الفصل:";
+            lblClass.Font = new Font("Tahoma", 9F, FontStyle.Bold);
+            lblClass.AutoSize = true;
+            lblClass.Location = new Point(350, 12);
+
+            ComboBox cmbClass = new ComboBox();
+            cmbClass.Width = 200;
+            cmbClass.Location = new Point(130, 10);
+            cmbClass.DropDownStyle = ComboBoxStyle.DropDownList;
+            f.DataCombo(cmbClass, "Classes", "ClassName", "Id", " WHERE IsActive = 0 ORDER BY ClassName");
+
+            topPanel.Controls.Add(lblClass);
+            topPanel.Controls.Add(cmbClass);
+
+            CheckedListBox clb = new CheckedListBox();
+            clb.Dock = DockStyle.Fill;
+            clb.Font = new Font("Tahoma", 10F);
+            clb.CheckOnClick = true;
+            clb.Top = 50;
+
+            DataTable allSubjects = f.GetData("SELECT Id, SubjectName FROM Subjects WHERE IsActive = 0 ORDER BY SubjectName");
+            if (allSubjects != null)
+            {
+                foreach (DataRow row in allSubjects.Rows)
+                {
+                    string name = row["SubjectName"].ToString();
+                    clb.Items.Add(name, false);
+                }
+            }
+
+            Panel btnPanel = new Panel();
+            btnPanel.Height = 45;
+            btnPanel.Dock = DockStyle.Bottom;
+
+            Button btnSave = new Button();
+            btnSave.Text = "حفظ للفصل";
+            btnSave.Font = new Font("Tahoma", 9F, FontStyle.Bold);
+            btnSave.Size = new Size(100, 30);
+            btnSave.Location = new Point(170, 8);
+            btnSave.DialogResult = DialogResult.OK;
+
+            Button btnCancel = new Button();
+            btnCancel.Text = "إلغاء";
+            btnCancel.Font = new Font("Tahoma", 9F);
+            btnCancel.Size = new Size(80, 30);
+            btnCancel.Location = new Point(50, 8);
+            btnCancel.DialogResult = DialogResult.Cancel;
+
+            btnPanel.Controls.Add(btnSave);
+            btnPanel.Controls.Add(btnCancel);
+
+            dialog.Controls.Add(clb);
+            dialog.Controls.Add(topPanel);
+            dialog.Controls.Add(btnPanel);
+
+            if (dialog.ShowDialog() == DialogResult.OK)
+            {
+                if (cmbClass.SelectedValue == null)
+                {
+                    MessageBox.Show("الرجاء اختيار الفصل.", "تنبيه", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                if (clb.CheckedItems.Count == 0)
+                {
+                    MessageBox.Show("الرجاء اختيار مادة واحدة على الأقل.", "تنبيه", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                int classId = Convert.ToInt32(cmbClass.SelectedValue);
+
+                var selectedIds = new List<int>();
+                for (int i = 0; i < clb.Items.Count; i++)
+                {
+                    if (clb.GetItemChecked(i))
+                        selectedIds.Add(Convert.ToInt32(allSubjects.Rows[i]["Id"]));
+                }
+
+                DataTable students = helper.GetStudentsByClass(classId);
+                if (students == null || students.Rows.Count == 0)
+                {
+                    MessageBox.Show("لا يوجد طلاب في هذا الفصل.", "تنبيه", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+
+                int count = 0;
+                foreach (DataRow studentRow in students.Rows)
+                {
+                    int sid = Convert.ToInt32(studentRow["Id"]);
+                    helper.SaveStudentSubjects(sid, selectedIds);
+                    count++;
+                }
+
+                MessageBox.Show($"تم إسناد المواد لـ {count} طالب/طالبة بنجاح.", "نجاح", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+
+            dialog.Dispose();
         }
 
     }

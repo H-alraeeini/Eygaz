@@ -24,7 +24,7 @@ namespace Eygaz
         private const string SubjectHifz = "\u0627\u0644\u062D\u0641\u0638";
 
         /// <summary>???? ??? ????? ?????? ???? ????? ?????? ?? ???????? ???? ???? ?? ??? ?????.</summary>
-        private const int SubjectPrintMinColumnWidth = 118;
+        private const int SubjectPrintMinColumnWidth = 70;
 
         /// <summary>????? ???? ????? ????? ???? ????? ??? ???? ???? ???????.</summary>
         private const int ColumnContentPaddingPx = 18;
@@ -114,8 +114,11 @@ namespace Eygaz
                 row[ColRank] = 0;
                 row["TopFlag"] = false;
 
+                int assignedSubjects = group.Count(r =>
+                    r["SubjectName"] != DBNull.Value &&
+                    !string.IsNullOrWhiteSpace(r["SubjectName"]?.ToString()));
+
                 double totalRaw = 0;
-                double maxPossibleWithScores = 0;
                 foreach (string subject in subjects)
                 {
                     DataRow subjectRow = group.FirstOrDefault(r =>
@@ -124,23 +127,27 @@ namespace Eygaz
                             subject,
                             StringComparison.Ordinal));
 
-                    if (subjectRow == null || subjectRow["Score"] == DBNull.Value)
+                    if (subjectRow == null)
                     {
                         row[subject] = "\u2014";
                         continue;
                     }
 
+                    if (subjectRow["Score"] == DBNull.Value)
+                    {
+                        row[subject] = "0";
+                        continue;
+                    }
+
                     double score = Convert.ToDouble(subjectRow["Score"]);
                     row[subject] = score.ToString("0.#", CultureInfo.InvariantCulture);
-                    double maxForSubject = GetMaxScoreForRow(subjectRow, subject);
                     totalRaw += score;
-                    maxPossibleWithScores += maxForSubject;
                 }
 
                 row[ColTotal] = Math.Round(totalRaw, 1, MidpointRounding.AwayFromZero);
-                row[ColPercent] = maxPossibleWithScores <= 0
+                row[ColPercent] = assignedSubjects <= 0
                     ? 0
-                    : Math.Round((totalRaw / maxPossibleWithScores) * 100.0, 4, MidpointRounding.AwayFromZero);
+                    : Math.Round(totalRaw / assignedSubjects, 4, MidpointRounding.AwayFromZero);
 
                 table.Rows.Add(row);
             }

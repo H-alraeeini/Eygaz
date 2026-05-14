@@ -35,7 +35,11 @@
             this.BtnSrch = new System.Windows.Forms.Button();
             this.BtnSave = new System.Windows.Forms.Button();
             this.BtnEdit = new System.Windows.Forms.Button();
+            this.BtnSubjects = new System.Windows.Forms.Button();
+            this.BtnBatchSubjects = new System.Windows.Forms.Button();
             this.PnlData = new System.Windows.Forms.Panel();
+            this.ClassId = new System.Windows.Forms.ComboBox();
+            this.lblClassId = new System.Windows.Forms.Label();
             this.Age = new System.Windows.Forms.TextBox();
             this.lblAge = new System.Windows.Forms.Label();
             this.FullName = new System.Windows.Forms.TextBox();
@@ -58,8 +62,6 @@
             this.PnlSrh = new System.Windows.Forms.Panel();
             this.GVShow = new DevExpress.XtraGrid.GridControl();
             this.GrdDtl = new DevExpress.XtraGrid.Views.Grid.GridView();
-            this.ClassId = new System.Windows.Forms.ComboBox();
-            this.lblClassId = new System.Windows.Forms.Label();
             this.PnlBut.SuspendLayout();
             this.PnlData.SuspendLayout();
             this.PnlSrh.SuspendLayout();
@@ -75,9 +77,11 @@
             this.PnlBut.Controls.Add(this.BtnSrch);
             this.PnlBut.Controls.Add(this.BtnSave);
             this.PnlBut.Controls.Add(this.BtnEdit);
-            this.PnlBut.Location = new System.Drawing.Point(37, 84);
+            this.PnlBut.Controls.Add(this.BtnSubjects);
+            this.PnlBut.Controls.Add(this.BtnBatchSubjects);
+            this.PnlBut.Location = new System.Drawing.Point(16, 84);
             this.PnlBut.Name = "PnlBut";
-            this.PnlBut.Size = new System.Drawing.Size(581, 30);
+            this.PnlBut.Size = new System.Drawing.Size(624, 30);
             this.PnlBut.TabIndex = 71;
             // 
             // BtnUndo
@@ -85,9 +89,9 @@
             this.BtnUndo.BackColor = System.Drawing.Color.DeepSkyBlue;
             this.BtnUndo.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.BtnUndo.Font = new System.Drawing.Font("Tahoma", 8F, System.Drawing.FontStyle.Bold);
-            this.BtnUndo.Location = new System.Drawing.Point(377, 4);
+            this.BtnUndo.Location = new System.Drawing.Point(453, 4);
             this.BtnUndo.Name = "BtnUndo";
-            this.BtnUndo.Size = new System.Drawing.Size(81, 23);
+            this.BtnUndo.Size = new System.Drawing.Size(72, 23);
             this.BtnUndo.TabIndex = 6;
             this.BtnUndo.Text = "تراجع";
             this.BtnUndo.UseVisualStyleBackColor = false;
@@ -98,9 +102,9 @@
             this.BtnDel.BackColor = System.Drawing.Color.DeepSkyBlue;
             this.BtnDel.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.BtnDel.Font = new System.Drawing.Font("Tahoma", 8F, System.Drawing.FontStyle.Bold);
-            this.BtnDel.Location = new System.Drawing.Point(41, 4);
+            this.BtnDel.Location = new System.Drawing.Point(168, 4);
             this.BtnDel.Name = "BtnDel";
-            this.BtnDel.Size = new System.Drawing.Size(81, 23);
+            this.BtnDel.Size = new System.Drawing.Size(72, 23);
             this.BtnDel.TabIndex = 5;
             this.BtnDel.Text = "حذف";
             this.BtnDel.UseVisualStyleBackColor = false;
@@ -111,9 +115,9 @@
             this.BtnNew.BackColor = System.Drawing.Color.DeepSkyBlue;
             this.BtnNew.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.BtnNew.Font = new System.Drawing.Font("Tahoma", 8F, System.Drawing.FontStyle.Bold);
-            this.BtnNew.Location = new System.Drawing.Point(461, 4);
+            this.BtnNew.Location = new System.Drawing.Point(524, 4);
             this.BtnNew.Name = "BtnNew";
-            this.BtnNew.Size = new System.Drawing.Size(81, 23);
+            this.BtnNew.Size = new System.Drawing.Size(72, 23);
             this.BtnNew.TabIndex = 1;
             this.BtnNew.Text = "جديد";
             this.BtnNew.UseVisualStyleBackColor = false;
@@ -124,9 +128,9 @@
             this.BtnSrch.BackColor = System.Drawing.Color.DeepSkyBlue;
             this.BtnSrch.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.BtnSrch.Font = new System.Drawing.Font("Tahoma", 8F, System.Drawing.FontStyle.Bold);
-            this.BtnSrch.Location = new System.Drawing.Point(125, 4);
+            this.BtnSrch.Location = new System.Drawing.Point(237, 4);
             this.BtnSrch.Name = "BtnSrch";
-            this.BtnSrch.Size = new System.Drawing.Size(81, 23);
+            this.BtnSrch.Size = new System.Drawing.Size(72, 23);
             this.BtnSrch.TabIndex = 4;
             this.BtnSrch.Text = "بحث";
             this.BtnSrch.UseVisualStyleBackColor = false;
@@ -137,9 +141,9 @@
             this.BtnSave.BackColor = System.Drawing.Color.DeepSkyBlue;
             this.BtnSave.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.BtnSave.Font = new System.Drawing.Font("Tahoma", 8F, System.Drawing.FontStyle.Bold);
-            this.BtnSave.Location = new System.Drawing.Point(293, 4);
+            this.BtnSave.Location = new System.Drawing.Point(381, 4);
             this.BtnSave.Name = "BtnSave";
-            this.BtnSave.Size = new System.Drawing.Size(81, 23);
+            this.BtnSave.Size = new System.Drawing.Size(72, 23);
             this.BtnSave.TabIndex = 2;
             this.BtnSave.Text = "حفظ";
             this.BtnSave.UseVisualStyleBackColor = false;
@@ -150,13 +154,39 @@
             this.BtnEdit.BackColor = System.Drawing.Color.DeepSkyBlue;
             this.BtnEdit.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.BtnEdit.Font = new System.Drawing.Font("Tahoma", 8F, System.Drawing.FontStyle.Bold);
-            this.BtnEdit.Location = new System.Drawing.Point(209, 4);
+            this.BtnEdit.Location = new System.Drawing.Point(309, 4);
             this.BtnEdit.Name = "BtnEdit";
-            this.BtnEdit.Size = new System.Drawing.Size(81, 23);
+            this.BtnEdit.Size = new System.Drawing.Size(72, 23);
             this.BtnEdit.TabIndex = 3;
             this.BtnEdit.Text = "تعديل ";
             this.BtnEdit.UseVisualStyleBackColor = false;
             this.BtnEdit.Click += new System.EventHandler(this.BtnEdit_Click);
+            // 
+            // BtnSubjects
+            // 
+            this.BtnSubjects.BackColor = System.Drawing.Color.DeepSkyBlue;
+            this.BtnSubjects.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.BtnSubjects.Font = new System.Drawing.Font("Tahoma", 8F, System.Drawing.FontStyle.Bold);
+            this.BtnSubjects.Location = new System.Drawing.Point(100, 4);
+            this.BtnSubjects.Name = "BtnSubjects";
+            this.BtnSubjects.Size = new System.Drawing.Size(72, 23);
+            this.BtnSubjects.TabIndex = 7;
+            this.BtnSubjects.Text = "المواد";
+            this.BtnSubjects.UseVisualStyleBackColor = false;
+            this.BtnSubjects.Click += new System.EventHandler(this.BtnSubjects_Click);
+            // 
+            // BtnBatchSubjects
+            // 
+            this.BtnBatchSubjects.BackColor = System.Drawing.Color.DeepSkyBlue;
+            this.BtnBatchSubjects.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.BtnBatchSubjects.Font = new System.Drawing.Font("Tahoma", 8F, System.Drawing.FontStyle.Bold);
+            this.BtnBatchSubjects.Location = new System.Drawing.Point(29, 4);
+            this.BtnBatchSubjects.Name = "BtnBatchSubjects";
+            this.BtnBatchSubjects.Size = new System.Drawing.Size(72, 23);
+            this.BtnBatchSubjects.TabIndex = 8;
+            this.BtnBatchSubjects.Text = "تحديد جماعي";
+            this.BtnBatchSubjects.UseVisualStyleBackColor = false;
+            this.BtnBatchSubjects.Click += new System.EventHandler(this.BtnBatchSubjects_Click);
             // 
             // PnlData
             // 
@@ -186,6 +216,25 @@
             this.PnlData.Name = "PnlData";
             this.PnlData.Size = new System.Drawing.Size(614, 175);
             this.PnlData.TabIndex = 72;
+            // 
+            // ClassId
+            // 
+            this.ClassId.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(192)))), ((int)(((byte)(255)))), ((int)(((byte)(192)))));
+            this.ClassId.FormattingEnabled = true;
+            this.ClassId.Location = new System.Drawing.Point(145, 60);
+            this.ClassId.Name = "ClassId";
+            this.ClassId.Size = new System.Drawing.Size(87, 21);
+            this.ClassId.TabIndex = 117;
+            // 
+            // lblClassId
+            // 
+            this.lblClassId.AutoSize = true;
+            this.lblClassId.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(43)))), ((int)(((byte)(79)))), ((int)(((byte)(88)))));
+            this.lblClassId.Location = new System.Drawing.Point(237, 66);
+            this.lblClassId.Name = "lblClassId";
+            this.lblClassId.Size = new System.Drawing.Size(36, 13);
+            this.lblClassId.TabIndex = 118;
+            this.lblClassId.Text = "الفصل";
             // 
             // Age
             // 
@@ -418,30 +467,11 @@
             this.GrdDtl.OptionsView.ShowGroupPanel = false;
             this.GrdDtl.FocusedRowChanged += new DevExpress.XtraGrid.Views.Base.FocusedRowChangedEventHandler(this.GrdDtl_FocusedRowChanged);
             // 
-            // ClassId
-            // 
-            this.ClassId.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(192)))), ((int)(((byte)(255)))), ((int)(((byte)(192)))));
-            this.ClassId.FormattingEnabled = true;
-            this.ClassId.Location = new System.Drawing.Point(145, 60);
-            this.ClassId.Name = "ClassId";
-            this.ClassId.Size = new System.Drawing.Size(87, 21);
-            this.ClassId.TabIndex = 117;
-            // 
-            // lblClassId
-            // 
-            this.lblClassId.AutoSize = true;
-            this.lblClassId.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(43)))), ((int)(((byte)(79)))), ((int)(((byte)(88)))));
-            this.lblClassId.Location = new System.Drawing.Point(237, 66);
-            this.lblClassId.Name = "lblClassId";
-            this.lblClassId.Size = new System.Drawing.Size(36, 13);
-            this.lblClassId.TabIndex = 118;
-            this.lblClassId.Text = "الفصل";
-            // 
             // FrmStudent
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(655, 552);
+            this.ClientSize = new System.Drawing.Size(702, 552);
             this.Controls.Add(this.PnlSrh);
             this.Controls.Add(this.PnlData);
             this.Controls.Add(this.PnlBut);
@@ -493,6 +523,8 @@
         private System.Windows.Forms.TextBox Age;
         private System.Windows.Forms.ComboBox ClassId;
         private System.Windows.Forms.Label lblClassId;
+        private System.Windows.Forms.Button BtnSubjects;
+        private System.Windows.Forms.Button BtnBatchSubjects;
     }
 }
 

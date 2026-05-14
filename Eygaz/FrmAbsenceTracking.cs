@@ -1,5 +1,6 @@
-using System;
+﻿using System;
 using System.Data;
+using System.Drawing;
 using System.Windows.Forms;
 
 namespace Eygaz
@@ -8,6 +9,8 @@ namespace Eygaz
     {
         Func f = new Func();
         AttendanceHelper helper = new AttendanceHelper();
+        private Label lblHijriFrom;
+        private Label lblHijriTo;
 
         public FrmAbsenceTracking()
         {
@@ -23,6 +26,10 @@ namespace Eygaz
                 DtFrom.Value = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
                 DtTo.Value = DateTime.Today;
                 NumMinAbsences.Value = 1;
+                EnsureHijriDateLabels();
+                DtFrom.ValueChanged += DateFilters_ValueChanged;
+                DtTo.ValueChanged += DateFilters_ValueChanged;
+                UpdateHijriDateLabels();
             }
             catch (Exception ex)
             {
@@ -30,10 +37,51 @@ namespace Eygaz
             }
         }
 
+        private void EnsureHijriDateLabels()
+        {
+            if (lblHijriFrom == null)
+            {
+                lblHijriFrom = new Label();
+                lblHijriFrom.AutoSize = true;
+                lblHijriFrom.ForeColor = Color.DarkSlateBlue;
+                lblHijriFrom.Font = new Font("Tahoma", 7.5F, FontStyle.Bold);
+                lblHijriFrom.Location = new System.Drawing.Point(460, 35);
+                lblHijriFrom.Name = "lblHijriFrom";
+                lblHijriFrom.RightToLeft = RightToLeft.No;
+                PnlFilter.Controls.Add(lblHijriFrom);
+            }
+
+            if (lblHijriTo == null)
+            {
+                lblHijriTo = new Label();
+                lblHijriTo.AutoSize = true;
+                lblHijriTo.ForeColor = Color.DarkSlateBlue;
+                lblHijriTo.Font = new Font("Tahoma", 7.5F, FontStyle.Bold);
+                lblHijriTo.Location = new System.Drawing.Point(325, 35);
+                lblHijriTo.Name = "lblHijriTo";
+                lblHijriTo.RightToLeft = RightToLeft.No;
+                PnlFilter.Controls.Add(lblHijriTo);
+            }
+        }
+
+        private void DateFilters_ValueChanged(object sender, EventArgs e)
+        {
+            UpdateHijriDateLabels();
+        }
+
+        private void UpdateHijriDateLabels()
+        {
+            if (lblHijriFrom != null)
+                lblHijriFrom.Text = AttendanceHelper.ToHijriDateDisplayArabic(DtFrom.Value.Date);
+            if (lblHijriTo != null)
+                lblHijriTo.Text = AttendanceHelper.ToHijriDateDisplayArabic(DtTo.Value.Date);
+        }
+
         private void BtnSearch_Click(object sender, EventArgs e)
         {
             try
             {
+                UpdateHijriDateLabels();
                 int classId = CmbClass.SelectedValue != null ? Convert.ToInt32(CmbClass.SelectedValue) : 0;
                 string dateFrom = DtFrom.Value.ToString("yyyy-MM-dd");
                 string dateTo = DtTo.Value.ToString("yyyy-MM-dd");

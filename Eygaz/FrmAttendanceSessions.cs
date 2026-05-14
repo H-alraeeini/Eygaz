@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Data;
 using System.Windows.Forms;
 
@@ -8,6 +8,8 @@ namespace Eygaz
     {
         Func f = new Func();
         AttendanceHelper helper = new AttendanceHelper();
+        private Label lblHijriFrom;
+        private Label lblHijriTo;
 
         public FrmAttendanceSessions()
         {
@@ -29,6 +31,10 @@ namespace Eygaz
                 // تعيين فترة افتراضية (الشهر الحالي)
                 DtFrom.Value = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
                 DtTo.Value = DateTime.Today;
+                EnsureHijriDateLabels();
+                DtFrom.ValueChanged += DateFilters_ValueChanged;
+                DtTo.ValueChanged += DateFilters_ValueChanged;
+                UpdateHijriDateLabels();
 
                 // تحميل جميع الجلسات
                 LoadSessions();
@@ -45,6 +51,7 @@ namespace Eygaz
         // =============================================
         private void LoadSessions()
         {
+            UpdateHijriDateLabels();
             int classId = CmbClass.SelectedValue != null ? Convert.ToInt32(CmbClass.SelectedValue) : 0;
             int subjectId = CmbSubject.SelectedValue != null ? Convert.ToInt32(CmbSubject.SelectedValue) : 0;
             int teacherId = CmbTeacher.SelectedValue != null ? Convert.ToInt32(CmbTeacher.SelectedValue) : 0;
@@ -54,6 +61,46 @@ namespace Eygaz
             DataTable dt = helper.GetSessions(classId, subjectId, teacherId, dateFrom, dateTo);
             GVSessions.DataSource = dt;
             SetupGridColumns();
+        }
+
+        private void EnsureHijriDateLabels()
+        {
+            if (lblHijriFrom == null)
+            {
+                lblHijriFrom = new Label();
+                lblHijriFrom.AutoSize = true;
+                lblHijriFrom.ForeColor = System.Drawing.Color.DarkSlateBlue;
+                lblHijriFrom.Font = new System.Drawing.Font("Tahoma", 7.5F, System.Drawing.FontStyle.Bold);
+                lblHijriFrom.Location = new System.Drawing.Point(580, 68);
+                lblHijriFrom.Name = "lblHijriFrom";
+                lblHijriFrom.RightToLeft = RightToLeft.No;
+                PnlFilter.Controls.Add(lblHijriFrom);
+            }
+
+            if (lblHijriTo == null)
+            {
+                lblHijriTo = new Label();
+                lblHijriTo.AutoSize = true;
+                lblHijriTo.ForeColor = System.Drawing.Color.DarkSlateBlue;
+                lblHijriTo.Font = new System.Drawing.Font("Tahoma", 7.5F, System.Drawing.FontStyle.Bold);
+                lblHijriTo.Location = new System.Drawing.Point(390, 68);
+                lblHijriTo.Name = "lblHijriTo";
+                lblHijriTo.RightToLeft = RightToLeft.No;
+                PnlFilter.Controls.Add(lblHijriTo);
+            }
+        }
+
+        private void DateFilters_ValueChanged(object sender, EventArgs e)
+        {
+            UpdateHijriDateLabels();
+        }
+
+        private void UpdateHijriDateLabels()
+        {
+            if (lblHijriFrom != null)
+                lblHijriFrom.Text = AttendanceHelper.ToHijriDateDisplayArabic(DtFrom.Value.Date);
+            if (lblHijriTo != null)
+                lblHijriTo.Text = AttendanceHelper.ToHijriDateDisplayArabic(DtTo.Value.Date);
         }
 
         private void SetupGridColumns()
@@ -69,6 +116,16 @@ namespace Eygaz
             {
                 GrdSessions.Columns["SessionDate"].Caption = "التاريخ";
                 GrdSessions.Columns["SessionDate"].Width = 100;
+            }
+            if (GrdSessions.Columns.ColumnByFieldName("SessionDateHijri") != null)
+            {
+                GrdSessions.Columns["SessionDateHijri"].Caption = "التاريخ الهجري";
+                GrdSessions.Columns["SessionDateHijri"].Width = 100;
+            }
+            if (GrdSessions.Columns.ColumnByFieldName("Term") != null)
+            {
+                GrdSessions.Columns["Term"].Caption = "الترم";
+                GrdSessions.Columns["Term"].Width = 80;
             }
             if (GrdSessions.Columns.ColumnByFieldName("ClassName") != null)
             {

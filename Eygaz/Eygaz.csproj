@@ -173,25 +173,39 @@
     <Compile Include="FrmAbsenceTracking.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="FrmAbsenceTracking.Designer.cs" />
+    <Compile Include="FrmAbsenceTracking.Designer.cs">
+      <DependentUpon>FrmAbsenceTracking.cs</DependentUpon>
+    </Compile>
     <Compile Include="FrmAttendanceReports.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="FrmAttendanceReports.Designer.cs" />
+    <Compile Include="FrmAttendanceReports.Designer.cs">
+      <DependentUpon>FrmAttendanceReports.cs</DependentUpon>
+    </Compile>
     <Compile Include="FrmAttendanceSessions.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="FrmAttendanceSessions.Designer.cs" />
+    <Compile Include="FrmAttendanceSessions.Designer.cs">
+      <DependentUpon>FrmAttendanceSessions.cs</DependentUpon>
+    </Compile>
     <Compile Include="FrmAttendanceStud.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="FrmAttendanceStud.Designer.cs">
       <DependentUpon>FrmAttendanceStud.cs</DependentUpon>
     </Compile>
+    <Compile Include="FrmCenterDetails.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="FrmCenterDetails.Designer.cs">
+      <DependentUpon>FrmCenterDetails.cs</DependentUpon>
+    </Compile>
     <Compile Include="FrmCertificateDesigner.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="FrmCertificateDesigner.Designer.cs" />
+    <Compile Include="FrmCertificateDesigner.Designer.cs">
+      <DependentUpon>FrmCertificateDesigner.cs</DependentUpon>
+    </Compile>
     <Compile Include="FrmChangePassword.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -213,11 +227,15 @@
     <Compile Include="FrmDashboard.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="FrmDashboard.Designer.cs" />
+    <Compile Include="FrmDashboard.Designer.cs">
+      <DependentUpon>FrmDashboard.cs</DependentUpon>
+    </Compile>
     <Compile Include="FrmGenerateCertificate.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="FrmGenerateCertificate.Designer.cs" />
+    <Compile Include="FrmGenerateCertificate.Designer.cs">
+      <DependentUpon>FrmGenerateCertificate.cs</DependentUpon>
+    </Compile>
     <Compile Include="FrmGradeEntry.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -251,7 +269,15 @@
     <Compile Include="FrmStudentCertificates.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="FrmStudentCertificates.Designer.cs" />
+    <Compile Include="FrmStudentCertificates.Designer.cs">
+      <DependentUpon>FrmStudentCertificates.cs</DependentUpon>
+    </Compile>
+    <Compile Include="FrmStudentReport.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="FrmStudentReport.Designer.cs">
+      <DependentUpon>FrmStudentReport.cs</DependentUpon>
+    </Compile>
     <Compile Include="FrmSubject.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -261,7 +287,9 @@
     <Compile Include="FrmTeacherAttendance.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="FrmTeacherAttendance.Designer.cs" />
+    <Compile Include="FrmTeacherAttendance.Designer.cs">
+      <DependentUpon>FrmTeacherAttendance.cs</DependentUpon>
+    </Compile>
     <Compile Include="FrmTeachers.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -285,29 +313,24 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="WhatsAppHelper.cs" />
-    <EmbeddedResource Include="FrmAbsenceTracking.resx" />
-    <EmbeddedResource Include="FrmAttendanceReports.resx" />
-    <EmbeddedResource Include="FrmAttendanceSessions.resx" />
+    <EmbeddedResource Include="FrmAbsenceTracking.resx">
+      <DependentUpon>FrmAbsenceTracking.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="FrmAttendanceStud.resx">
       <DependentUpon>FrmAttendanceStud.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="FrmCertificateDesigner.resx" />
     <EmbeddedResource Include="FrmClassess.resx">
       <DependentUpon>FrmClassess.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="FrmDashboard.resx" />
-    <EmbeddedResource Include="FrmGenerateCertificate.resx" />
     <EmbeddedResource Include="FrmStudent.resx">
       <DependentUpon>FrmStudent.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="FrmLogin.resx">
       <DependentUpon>FrmLogin.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="FrmStudentCertificates.resx" />
     <EmbeddedResource Include="FrmSubject.resx">
       <DependentUpon>FrmSubject.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="FrmTeacherAttendance.resx" />
     <EmbeddedResource Include="FrmTeachers.resx">
       <DependentUpon>FrmTeachers.cs</DependentUpon>
     </EmbeddedResource>
@@ -323,6 +346,7 @@
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
     </Compile>
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
@@ -341,6 +365,7 @@
   <ItemGroup>
     <Content Include="Database\Migrations\006_auth_and_permissions.sql" />
     <Content Include="MetroFramework.txt" />
+    <None Include="Pic.jpg" />
     <None Include="Database\Migrations\001_initial.sql">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -354,6 +379,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="Database\Migrations\005_examresults_lastsurah.sql">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Database\Migrations\007_hijri_dates.sql">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>

@@ -83,6 +83,7 @@ namespace Eygaz
         public int ClassId { get; set; }
         public int SubjectId { get; set; }
         public int TeacherId { get; set; }
+        public string Term { get; set; }
         public string SessionDate { get; set; }
         public string Notes { get; set; }
         public string CreatedAt { get; set; }

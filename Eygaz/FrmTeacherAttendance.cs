@@ -12,6 +12,7 @@ namespace Eygaz
         Func f = new Func();
         AttendanceHelper helper = new AttendanceHelper();
         private DataTable dtTeacherAttendance;
+        private Label lblHijriDate;
 
         public FrmTeacherAttendance()
         {
@@ -19,13 +20,16 @@ namespace Eygaz
         }
 
         // =============================================
-        // ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ø´Ø§Ø´Ø©
+        // ÊÍãíá ÇáÔÇÔÉ
         // =============================================
         private void FrmTeacherAttendance_Load(object sender, EventArgs e)
         {
             try
             {
                 AttendDate.Value = DateTime.Today;
+                EnsureHijriDateLabel();
+                AttendDate.ValueChanged += AttendDate_ValueChanged;
+                UpdateHijriDateLabel();
 
                 GrdTeacherAttend.OptionsBehavior.Editable = true;
                 GrdTeacherAttend.RowHeight = 28;
@@ -35,34 +39,62 @@ namespace Eygaz
                 BtnMarkAllAbsent.Enabled = false;
                 BtnSendWhatsApp.Enabled = false;
 
-                // ØªØ­Ù…ÙŠÙ„ ØªÙ„Ù‚Ø§Ø¦ÙŠ Ù„ØªØ§Ø±ÙŠØ® Ø§Ù„ÙŠÙˆÙ…
+                // ÊÍãíá ÊáŞÇÆí áÊÇÑíÎ Çáíæã
                 LoadTeachers();
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Ø®Ø·Ø£ Ø£Ø«Ù†Ø§Ø¡ ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ø¨ÙŠØ§Ù†Ø§Øª: " + ex.Message, "Ø®Ø·Ø£",
+                MessageBox.Show("ÎØÃ ÃËäÇÁ ÊÍãíá ÇáÈíÇäÇÊ: " + ex.Message, "ÎØÃ",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
         // =============================================
-        // ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ù…Ø¯Ø±Ø³ÙŠÙ†
+        // ÊÍãíá ÇáãÏÑÓíä
         // =============================================
         private void BtnLoadTeachers_Click(object sender, EventArgs e)
         {
             LoadTeachers();
         }
 
+        private void EnsureHijriDateLabel()
+        {
+            if (lblHijriDate != null) return;
+
+            lblHijriDate = new Label();
+            lblHijriDate.AutoSize = true;
+            lblHijriDate.ForeColor = Color.DarkSlateBlue;
+            lblHijriDate.Font = new Font("Tahoma", 8F, FontStyle.Bold);
+            lblHijriDate.Location = new Point(427, 55);
+            lblHijriDate.Name = "lblHijriDate";
+            Controls.Add(lblHijriDate);
+            lblHijriDate.RightToLeft = RightToLeft.No;
+            lblHijriDate.BringToFront();
+        }
+
+        private void AttendDate_ValueChanged(object sender, EventArgs e)
+        {
+            UpdateHijriDateLabel();
+        }
+
+        private void UpdateHijriDateLabel()
+        {
+            if (lblHijriDate == null) return;
+            string hijri = AttendanceHelper.ToHijriDateDisplayArabic(AttendDate.Value.Date);
+            lblHijriDate.Text = hijri;
+        }
+
         private void LoadTeachers()
         {
             try
             {
+                UpdateHijriDateLabel();
                 string date = AttendDate.Value.ToString("yyyy-MM-dd");
                 dtTeacherAttendance = helper.PrepareTeacherAttendanceGrid(date);
 
                 if (dtTeacherAttendance == null || dtTeacherAttendance.Rows.Count == 0)
                 {
-                    MessageBox.Show("Ù„Ø§ ÙŠÙˆØ¬Ø¯ Ù…Ø¯Ø±Ø³ÙŠÙ† Ù†Ø´Ø·ÙŠÙ† ÙÙŠ Ø§Ù„Ù†Ø¸Ø§Ù…", "ØªÙ†Ø¨ÙŠÙ‡",
+                    MessageBox.Show("áÇ íæÌÏ ãÏÑÓíä äÔØíä İí ÇáäÙÇã", "ÊäÈíå",
                         MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     BtnSave.Enabled = false;
                     BtnMarkAllPresent.Enabled = false;
@@ -81,13 +113,13 @@ namespace Eygaz
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Ø®Ø·Ø£ Ø£Ø«Ù†Ø§Ø¡ ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ù…Ø¯Ø±Ø³ÙŠÙ†: " + ex.Message, "Ø®Ø·Ø£",
+                MessageBox.Show("ÎØÃ ÃËäÇÁ ÊÍãíá ÇáãÏÑÓíä: " + ex.Message, "ÎØÃ",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
         // =============================================
-        // Ø¥Ø¹Ø¯Ø§Ø¯ Ø£Ø¹Ù…Ø¯Ø© Ø§Ù„Ù€ Grid
+        // ÅÚÏÇÏ ÃÚãÏÉ ÇáÜ Grid
         // =============================================
         private void SetupGridColumns()
         {
@@ -96,31 +128,31 @@ namespace Eygaz
             for (int i = 0; i < GrdTeacherAttend.Columns.Count; i++)
                 GrdTeacherAttend.Columns[i].Visible = false;
 
-            // Ø¥Ø®ÙØ§Ø¡ TeacherId Ùˆ Phone
+            // ÅÎİÇÁ TeacherId æ Phone
             if (GrdTeacherAttend.Columns.ColumnByFieldName("TeacherId") != null)
                 GrdTeacherAttend.Columns["TeacherId"].Visible = false;
 
             if (GrdTeacherAttend.Columns.ColumnByFieldName("Phone") != null)
                 GrdTeacherAttend.Columns["Phone"].Visible = false;
 
-            // Ø§Ø³Ù… Ø§Ù„Ù…Ø¯Ø±Ø³
+            // ÇÓã ÇáãÏÑÓ
             if (GrdTeacherAttend.Columns.ColumnByFieldName("TeacherName") != null)
             {
                 var colName = GrdTeacherAttend.Columns["TeacherName"];
                 colName.Visible = true;
                 colName.VisibleIndex = 0;
-                colName.Caption = "Ø§Ø³Ù… Ø§Ù„Ù…Ø¯Ø±Ø³";
+                colName.Caption = "ÇÓã ÇáãÏÑÓ";
                 colName.OptionsColumn.AllowEdit = false;
                 colName.Width = 200;
             }
 
-            // Ø­Ø§Ù„Ø© Ø§Ù„Ø­Ø¶ÙˆØ±
+            // ÍÇáÉ ÇáÍÖæÑ
             if (GrdTeacherAttend.Columns.ColumnByFieldName("StatusId") != null)
             {
                 var colStatus = GrdTeacherAttend.Columns["StatusId"];
                 colStatus.Visible = true;
                 colStatus.VisibleIndex = 1;
-                colStatus.Caption = "Ø§Ù„Ø­Ø§Ù„Ø©";
+                colStatus.Caption = "ÇáÍÇáÉ";
                 colStatus.OptionsColumn.AllowEdit = true;
                 colStatus.Width = 120;
 
@@ -129,25 +161,25 @@ namespace Eygaz
                 repoCombo.DataSource = statusData;
                 repoCombo.ValueMember = "Id";
                 repoCombo.DisplayMember = "StatusName";
-                repoCombo.NullText = "Ø­Ø§Ø¶Ø±";
-                repoCombo.Columns.Add(new DevExpress.XtraEditors.Controls.LookUpColumnInfo("StatusName", "Ø§Ù„Ø­Ø§Ù„Ø©"));
+                repoCombo.NullText = "ÍÇÖÑ";
+                repoCombo.Columns.Add(new DevExpress.XtraEditors.Controls.LookUpColumnInfo("StatusName", "ÇáÍÇáÉ"));
                 repoCombo.ShowHeader = false;
 
                 GVTeacherAttend.RepositoryItems.Add(repoCombo);
                 colStatus.ColumnEdit = repoCombo;
             }
 
-            // Ø¥Ø®ÙØ§Ø¡ StatusName
+            // ÅÎİÇÁ StatusName
             if (GrdTeacherAttend.Columns.ColumnByFieldName("StatusName") != null)
                 GrdTeacherAttend.Columns["StatusName"].Visible = false;
 
-            // Ù…Ù„Ø§Ø­Ø¸Ø§Øª
+            // ãáÇÍÙÇÊ
             if (GrdTeacherAttend.Columns.ColumnByFieldName("Notes") != null)
             {
                 var colNotes = GrdTeacherAttend.Columns["Notes"];
                 colNotes.Visible = true;
                 colNotes.VisibleIndex = 2;
-                colNotes.Caption = "Ù…Ù„Ø§Ø­Ø¸Ø§Øª";
+                colNotes.Caption = "ãáÇÍÙÇÊ";
                 colNotes.OptionsColumn.AllowEdit = true;
                 colNotes.Width = 200;
             }
@@ -165,7 +197,7 @@ namespace Eygaz
         }
 
         // =============================================
-        // Ø­ÙØ¸ Ø§Ù„Ø­Ø¶ÙˆØ±
+        // ÍİÙ ÇáÍÖæÑ
         // =============================================
         private void BtnSave_Click(object sender, EventArgs e)
         {
@@ -173,7 +205,7 @@ namespace Eygaz
             {
                 if (dtTeacherAttendance == null || dtTeacherAttendance.Rows.Count == 0)
                 {
-                    MessageBox.Show("Ù„Ø§ ØªÙˆØ¬Ø¯ Ø¨ÙŠØ§Ù†Ø§Øª Ù„Ù„Ø­ÙØ¸", "ØªÙ†Ø¨ÙŠÙ‡",
+                    MessageBox.Show("áÇ ÊæÌÏ ÈíÇäÇÊ ááÍİÙ", "ÊäÈíå",
                         MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
@@ -185,37 +217,37 @@ namespace Eygaz
                 bool success = helper.SaveBulkTeacherAttendance(date, dtTeacherAttendance);
 
                 if (success)
-                    MessageBox.Show("ØªÙ… Ø­ÙØ¸ Ø­Ø¶ÙˆØ± Ø§Ù„Ù…Ø¯Ø±Ø³ÙŠÙ† Ø¨Ù†Ø¬Ø§Ø­", "ØªÙ†Ø¨ÙŠÙ‡",
+                    MessageBox.Show("Êã ÍİÙ ÍÖæÑ ÇáãÏÑÓíä ÈäÌÇÍ", "ÊäÈíå",
                         MessageBoxButtons.OK, MessageBoxIcon.Information);
                 else
-                    MessageBox.Show("Ø­Ø¯Ø« Ø®Ø·Ø£ Ø£Ø«Ù†Ø§Ø¡ Ø­ÙØ¸ Ø¨Ø¹Ø¶ Ø§Ù„Ø³Ø¬Ù„Ø§Øª", "Ø®Ø·Ø£",
+                    MessageBox.Show("ÍÏË ÎØÃ ÃËäÇÁ ÍİÙ ÈÚÖ ÇáÓÌáÇÊ", "ÎØÃ",
                         MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Ø®Ø·Ø£ Ø£Ø«Ù†Ø§Ø¡ Ø§Ù„Ø­ÙØ¸: " + ex.Message, "Ø®Ø·Ø£",
+                MessageBox.Show("ÎØÃ ÃËäÇÁ ÇáÍİÙ: " + ex.Message, "ÎØÃ",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
         // =============================================
-        // ØªØ­Ø¯ÙŠØ¯ Ø§Ù„ÙƒÙ„ Ø­Ø§Ø¶Ø±
+        // ÊÍÏíÏ Çáßá ÍÇÖÑ
         // =============================================
         private void BtnMarkAllPresent_Click(object sender, EventArgs e)
         {
-            MarkAll(1); // 1 = Ø­Ø§Ø¶Ø±
+            MarkAll(1); // 1 = ÍÇÖÑ
         }
 
         // =============================================
-        // ØªØ­Ø¯ÙŠØ¯ Ø§Ù„ÙƒÙ„ ØºØ§Ø¦Ø¨
+        // ÊÍÏíÏ Çáßá ÛÇÆÈ
         // =============================================
         private void BtnMarkAllAbsent_Click(object sender, EventArgs e)
         {
-            MarkAll(2); // 2 = ØºØ§Ø¦Ø¨
+            MarkAll(2); // 2 = ÛÇÆÈ
         }
 
         // =============================================
-        // Ø¯Ø§Ù„Ø© Ù…Ø´ØªØ±ÙƒØ© Ù„ØªØ­Ø¯ÙŠØ¯ Ø­Ø§Ù„Ø© Ø¬Ù…ÙŠØ¹ Ø§Ù„Ù…Ø¯Ø±Ø³ÙŠÙ†
+        // ÏÇáÉ ãÔÊÑßÉ áÊÍÏíÏ ÍÇáÉ ÌãíÚ ÇáãÏÑÓíä
         // =============================================
         private void MarkAll(int statusId)
         {
@@ -226,10 +258,10 @@ namespace Eygaz
             string statusName = "";
             switch (statusId)
             {
-                case 1: statusName = "Ø­Ø§Ø¶Ø±"; break;
-                case 2: statusName = "ØºØ§Ø¦Ø¨"; break;
-                case 3: statusName = "Ù…ØªØ£Ø®Ø±"; break;
-                case 4: statusName = "ØºÙŠØ§Ø¨ Ø¨Ø¹Ø°Ø±"; break;
+                case 1: statusName = "ÍÇÖÑ"; break;
+                case 2: statusName = "ÛÇÆÈ"; break;
+                case 3: statusName = "ãÊÃÎÑ"; break;
+                case 4: statusName = "ÛíÇÈ ÈÚĞÑ"; break;
             }
 
             foreach (DataRow row in dtTeacherAttendance.Rows)
@@ -242,7 +274,7 @@ namespace Eygaz
         }
 
         // =============================================
-        // Ø¥Ø±Ø³Ø§Ù„ Ø¥Ø´Ø¹Ø§Ø±Ø§Øª ÙˆØ§ØªØ³Ø§Ø¨ Ù„Ù„ØºØ§Ø¦Ø¨ÙŠÙ† ÙˆØ§Ù„Ù…ØªØ£Ø®Ø±ÙŠÙ†
+        // ÅÑÓÇá ÅÔÚÇÑÇÊ æÇÊÓÇÈ ááÛÇÆÈíä æÇáãÊÃÎÑíä
         // =============================================
         private void BtnSendWhatsApp_Click(object sender, EventArgs e)
         {
@@ -264,12 +296,12 @@ namespace Eygaz
 
                     if (string.IsNullOrEmpty(phone)) continue;
 
-                    if (statusId == 2) // ØºØ§Ø¦Ø¨
+                    if (statusId == 2) // ÛÇÆÈ
                     {
                         WhatsAppHelper.SendTeacherAbsenceNotification(teacherName, phone, date);
                         sentCount++;
                     }
-                    else if (statusId == 3) // Ù…ØªØ£Ø®Ø±
+                    else if (statusId == 3) // ãÊÃÎÑ
                     {
                         WhatsAppHelper.SendTeacherLateNotification(teacherName, phone, date);
                         sentCount++;
@@ -277,27 +309,27 @@ namespace Eygaz
                 }
 
                 if (sentCount > 0)
-                    MessageBox.Show($"ØªÙ… ÙØªØ­ ÙˆØ§ØªØ³Ø§Ø¨ Ù„Ø¥Ø±Ø³Ø§Ù„ {sentCount} Ø¥Ø´Ø¹Ø§Ø±(Ø§Øª)", "ØªÙ†Ø¨ÙŠÙ‡",
+                    MessageBox.Show($"Êã İÊÍ æÇÊÓÇÈ áÅÑÓÇá {sentCount} ÅÔÚÇÑ(ÇÊ)", "ÊäÈíå",
                         MessageBoxButtons.OK, MessageBoxIcon.Information);
                 else
-                    MessageBox.Show("Ù„Ø§ ÙŠÙˆØ¬Ø¯ Ù…Ø¯Ø±Ø³ÙŠÙ† ØºØ§Ø¦Ø¨ÙŠÙ† Ø£Ùˆ Ù…ØªØ£Ø®Ø±ÙŠÙ† Ù„Ø¥Ø±Ø³Ø§Ù„ Ø¥Ø´Ø¹Ø§Ø±Ø§Øª Ù„Ù‡Ù…", "ØªÙ†Ø¨ÙŠÙ‡",
+                    MessageBox.Show("áÇ íæÌÏ ãÏÑÓíä ÛÇÆÈíä Ãæ ãÊÃÎÑíä áÅÑÓÇá ÅÔÚÇÑÇÊ áåã", "ÊäÈíå",
                         MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Ø®Ø·Ø£: " + ex.Message, "Ø®Ø·Ø£",
+                MessageBox.Show("ÎØÃ: " + ex.Message, "ÎØÃ",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
         // =============================================
-        // Ø§Ø®ØªØµØ§Ø±Ø§Øª Ù„ÙˆØ­Ø© Ø§Ù„Ù…ÙØ§ØªÙŠØ­
+        // ÇÎÊÕÇÑÇÊ áæÍÉ ÇáãİÇÊíÍ
         // =============================================
         private void FrmTeacherAttendance_KeyDown(object sender, KeyEventArgs e)
         {
             if (dtTeacherAttendance == null || dtTeacherAttendance.Rows.Count == 0) return;
 
-            // F5 = Ø§Ù„ÙƒÙ„ Ø­Ø§Ø¶Ø±
+            // F5 = Çáßá ÍÇÖÑ
             if (e.KeyCode == Keys.F5)
             {
                 MarkAll(1);
@@ -305,7 +337,7 @@ namespace Eygaz
                 return;
             }
 
-            // F6 = Ø§Ù„ÙƒÙ„ ØºØ§Ø¦Ø¨
+            // F6 = Çáßá ÛÇÆÈ
             if (e.KeyCode == Keys.F6)
             {
                 MarkAll(2);
@@ -313,17 +345,17 @@ namespace Eygaz
                 return;
             }
 
-            // Ø§Ø®ØªØµØ§Ø±Ø§Øª Ù„Ù„Ù…Ø¯Ø±Ø³ Ø§Ù„Ø­Ø§Ù„ÙŠ
+            // ÇÎÊÕÇÑÇÊ ááãÏÑÓ ÇáÍÇáí
             int rowHandle = GrdTeacherAttend.FocusedRowHandle;
             if (rowHandle < 0 || rowHandle >= dtTeacherAttendance.Rows.Count) return;
 
             int newStatusId = -1;
             switch (e.KeyCode)
             {
-                case Keys.P: newStatusId = 1; break; // Ø­Ø§Ø¶Ø±
-                case Keys.A: newStatusId = 2; break; // ØºØ§Ø¦Ø¨
-                case Keys.L: newStatusId = 3; break; // Ù…ØªØ£Ø®Ø±
-                case Keys.E: newStatusId = 4; break; // ØºÙŠØ§Ø¨ Ø¨Ø¹Ø°Ø±
+                case Keys.P: newStatusId = 1; break; // ÍÇÖÑ
+                case Keys.A: newStatusId = 2; break; // ÛÇÆÈ
+                case Keys.L: newStatusId = 3; break; // ãÊÃÎÑ
+                case Keys.E: newStatusId = 4; break; // ÛíÇÈ ÈÚĞÑ
             }
 
             if (newStatusId > 0)
@@ -332,17 +364,17 @@ namespace Eygaz
                 string statusName = "";
                 switch (newStatusId)
                 {
-                    case 1: statusName = "Ø­Ø§Ø¶Ø±"; break;
-                    case 2: statusName = "ØºØ§Ø¦Ø¨"; break;
-                    case 3: statusName = "Ù…ØªØ£Ø®Ø±"; break;
-                    case 4: statusName = "ØºÙŠØ§Ø¨ Ø¨Ø¹Ø°Ø±"; break;
+                    case 1: statusName = "ÍÇÖÑ"; break;
+                    case 2: statusName = "ÛÇÆÈ"; break;
+                    case 3: statusName = "ãÊÃÎÑ"; break;
+                    case 4: statusName = "ÛíÇÈ ÈÚĞÑ"; break;
                 }
 
                 dtTeacherAttendance.Rows[rowHandle]["StatusId"] = newStatusId;
                 dtTeacherAttendance.Rows[rowHandle]["StatusName"] = statusName;
                 GrdTeacherAttend.RefreshData();
 
-                // Ø§Ù„Ø§Ù†ØªÙ‚Ø§Ù„ Ù„Ù„Ø³Ø·Ø± Ø§Ù„ØªØ§Ù„ÙŠ
+                // ÇáÇäÊŞÇá ááÓØÑ ÇáÊÇáí
                 if (rowHandle < dtTeacherAttendance.Rows.Count - 1)
                     GrdTeacherAttend.FocusedRowHandle = rowHandle + 1;
 
@@ -351,3 +383,5 @@ namespace Eygaz
         }
     }
 }
+
+

@@ -1,4 +1,4 @@
-ï»¿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Drawing;
@@ -14,6 +14,7 @@ namespace Eygaz
         private readonly Dictionary<string, int> subjectColumnToId = new Dictionary<string, int>();
         private bool isDirty;
         private int lastSurahSubjectId;
+        private Label lblHijriDate;
 
         public FrmGradeEntry()
         {
@@ -28,8 +29,11 @@ namespace Eygaz
             CmbTerm.Items.AddRange(new object[] { "First", "Second", "Final" });
             CmbTerm.SelectedIndex = 0;
             DtExamDate.Value = DateTime.Today;
+            EnsureHijriDateLabel();
+            DtExamDate.ValueChanged += DtExamDate_ValueChanged;
+            UpdateHijriDateLabel();
             TxtMaxScore.Text = "100";
-            LblStatus.Text = "Ø§Ø®ØªØ± Ø§Ù„ÙØµÙ„ + Ø§Ù„ØªØ±Ù… Ø«Ù… Ø§Ø¶ØºØ· ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ø·Ù„Ø§Ø¨.";
+            LblStatus.Text = "ÇÎÊÑ ÇáİÕá + ÇáÊÑã Ëã ÇÖÛØ ÊÍãíá ÇáØáÇÈ.";
 
             CmbClass.SelectedIndexChanged += Filters_SelectedIndexChanged;
             CmbTerm.SelectedIndexChanged += Filters_SelectedIndexChanged;
@@ -37,19 +41,46 @@ namespace Eygaz
             GrdStudents.CellValueChanged += GrdStudents_CellValueChanged;
         }
 
+        private void EnsureHijriDateLabel()
+        {
+            if (lblHijriDate != null) return;
+
+            lblHijriDate = new Label();
+            lblHijriDate.AutoSize = true;
+            lblHijriDate.ForeColor = Color.DarkSlateBlue;
+            lblHijriDate.Font = new Font("Tahoma", 8F, FontStyle.Bold);
+            lblHijriDate.Location = new Point(222, 44);
+            lblHijriDate.Name = "lblHijriDate";
+            Controls.Add(lblHijriDate);
+            lblHijriDate.RightToLeft = RightToLeft.No;
+            lblHijriDate.BringToFront();
+        }
+
+        private void DtExamDate_ValueChanged(object sender, EventArgs e)
+        {
+            UpdateHijriDateLabel();
+        }
+
+        private void UpdateHijriDateLabel()
+        {
+            if (lblHijriDate == null) return;
+            string hijri = AttendanceHelper.ToHijriDateDisplayArabic(DtExamDate.Value.Date);
+            lblHijriDate.Text = hijri;
+        }
+
         private void BtnLoadStudents_Click(object sender, EventArgs e)
         {
             if (CmbClass.SelectedValue == null || CmbTerm.SelectedItem == null)
             {
-                MessageBox.Show("ÙŠØ±Ø¬Ù‰ Ø§Ø®ØªÙŠØ§Ø± Ø§Ù„ÙØµÙ„ + Ø§Ù„ØªØ±Ù….");
+                MessageBox.Show("íÑÌì ÇÎÊíÇÑ ÇáİÕá + ÇáÊÑã.");
                 return;
             }
 
             if (isDirty)
             {
                 DialogResult confirm = MessageBox.Show(
-                    "Ù„Ø¯ÙŠÙƒ ØªØºÙŠÙŠØ±Ø§Øª ØºÙŠØ± Ù…Ø­ÙÙˆØ¸Ø©ØŒ Ù‡Ù„ ØªØ±ÙŠØ¯ Ø§Ù„Ù…ØªØ§Ø¨Ø¹Ø© ÙˆÙÙ‚Ø¯Ø§Ù†Ù‡Ø§ØŸ",
-                    "ØªÙ†Ø¨ÙŠÙ‡",
+                    "áÏíß ÊÛííÑÇÊ ÛíÑ ãÍİæÙÉ¡ åá ÊÑíÏ ÇáãÊÇÈÚÉ æİŞÏÇäåÇ¿",
+                    "ÊäÈíå",
                     MessageBoxButtons.YesNo,
                     MessageBoxIcon.Warning);
                 if (confirm != DialogResult.Yes) return;
@@ -76,9 +107,9 @@ namespace Eygaz
             GVStudents.DataSource = dt;
             GrdStudents.BestFitColumns();
             if (GrdStudents.Columns["StudentId"] != null) GrdStudents.Columns["StudentId"].Visible = false;
-            if (GrdStudents.Columns["StudentName"] != null) GrdStudents.Columns["StudentName"].Caption = "Ø§Ø³Ù… Ø§Ù„Ø·Ø§Ù„Ø¨";
+            if (GrdStudents.Columns["StudentName"] != null) GrdStudents.Columns["StudentName"].Caption = "ÇÓã ÇáØÇáÈ";
             if (GrdStudents.Columns["StudentName"] != null) GrdStudents.Columns["StudentName"].OptionsColumn.ReadOnly = true;
-            if (GrdStudents.Columns["LastSurah"] != null) GrdStudents.Columns["LastSurah"].Caption = "Ø¢Ø®Ø± Ø³ÙˆØ±Ø©";
+            if (GrdStudents.Columns["LastSurah"] != null) GrdStudents.Columns["LastSurah"].Caption = "ÂÎÑ ÓæÑÉ";
 
             foreach (var col in subjectColumnToId)
             {
@@ -109,7 +140,7 @@ namespace Eygaz
                 }
             }
 
-            LblStatus.Text = $"ØªÙ… ØªØ­Ù…ÙŠÙ„ {dt.Rows.Count} Ø·Ø§Ù„Ø¨Ø§Ù‹ Ùˆ {subjectColumnToId.Count} Ù…Ø§Ø¯Ø© â€” Ø¯Ø±Ø¬Ø§Øª Ù…Ø³Ø¬Ù„Ø©: {existingScores}.";
+            LblStatus.Text = $"Êã ÊÍãíá {dt.Rows.Count} ØÇáÈÇğ æ {subjectColumnToId.Count} ãÇÏÉ ? ÏÑÌÇÊ ãÓÌáÉ: {existingScores}.";
             isDirty = false;
         }
 
@@ -117,32 +148,32 @@ namespace Eygaz
         {
             if (!AuthSession.HasPermission("grades.manage"))
             {
-                MessageBox.Show("Ù„ÙŠØ³ Ù„Ø¯ÙŠÙƒ ØµÙ„Ø§Ø­ÙŠØ© Ø¥Ø¯Ø§Ø±Ø© Ø§Ù„Ø¯Ø±Ø¬Ø§Øª.");
+                MessageBox.Show("áíÓ áÏíß ÕáÇÍíÉ ÅÏÇÑÉ ÇáÏÑÌÇÊ.");
                 return;
             }
 
             if (CmbClass.SelectedValue == null || CmbTerm.SelectedItem == null)
             {
-                MessageBox.Show("ÙŠØ±Ø¬Ù‰ ØªØ¹Ø¨Ø¦Ø© Ø¨ÙŠØ§Ù†Ø§Øª Ø§Ù„Ø§Ø®ØªØ¨Ø§Ø±.");
+                MessageBox.Show("íÑÌì ÊÚÈÆÉ ÈíÇäÇÊ ÇáÇÎÊÈÇÑ.");
                 return;
             }
 
             if (!double.TryParse(TxtMaxScore.Text, out double maxScore) || maxScore <= 0)
             {
-                MessageBox.Show("Ø§Ù„Ø¯Ø±Ø¬Ø© Ø§Ù„Ø¹Ø¸Ù…Ù‰ ØºÙŠØ± ØµØ­ÙŠØ­Ø©.");
+                MessageBox.Show("ÇáÏÑÌÉ ÇáÚÙãì ÛíÑ ÕÍíÍÉ.");
                 return;
             }
 
             DataTable students = GVStudents.DataSource as DataTable;
             if (students == null || students.Rows.Count == 0)
             {
-                MessageBox.Show("Ù„Ø§ ÙŠÙˆØ¬Ø¯ Ø·Ù„Ø§Ø¨.");
+                MessageBox.Show("áÇ íæÌÏ ØáÇÈ.");
                 return;
             }
 
             if (subjectColumnToId.Count == 0)
             {
-                MessageBox.Show("Ù„Ø§ ØªÙˆØ¬Ø¯ Ù…ÙˆØ§Ø¯ Ù„Ù„Ø­ÙØ¸.");
+                MessageBox.Show("áÇ ÊæÌÏ ãæÇÏ ááÍİÙ.");
                 return;
             }
 
@@ -169,7 +200,7 @@ namespace Eygaz
                         string subjectName = GrdStudents.Columns[subject.Key] == null
                             ? subject.Key
                             : GrdStudents.Columns[subject.Key].Caption;
-                        MessageBox.Show("Ø¯Ø±Ø¬Ø© ØºÙŠØ± ØµØ­ÙŠØ­Ø© Ù„Ù„Ø·Ø§Ù„Ø¨: " + row["StudentName"] + " â€” Ø§Ù„Ù…Ø§Ø¯Ø©: " + subjectName);
+                        MessageBox.Show("ÏÑÌÉ ÛíÑ ÕÍíÍÉ ááØÇáÈ: " + row["StudentName"] + " ? ÇáãÇÏÉ: " + subjectName);
                         return;
                     }
                 }
@@ -178,8 +209,8 @@ namespace Eygaz
             if (totalCells > 0 && (blankCount * 100.0 / totalCells) > 30.0)
             {
                 DialogResult confirm = MessageBox.Show(
-                    $"Ù‡Ù†Ø§Ùƒ {blankCount} Ø®Ù„ÙŠØ© Ø¯Ø±Ø¬Ø§Øª ÙØ§Ø±ØºØ©. Ù‡Ù„ ØªØ±ÙŠØ¯ Ø§Ù„Ù…ØªØ§Ø¨Ø¹Ø©ØŸ",
-                    "ØªØ£ÙƒÙŠØ¯ Ø§Ù„Ø­ÙØ¸",
+                    $"åäÇß {blankCount} ÎáíÉ ÏÑÌÇÊ İÇÑÛÉ. åá ÊÑíÏ ÇáãÊÇÈÚÉ¿",
+                    "ÊÃßíÏ ÇáÍİÙ",
                     MessageBoxButtons.YesNo,
                     MessageBoxIcon.Question);
                 if (confirm != DialogResult.Yes) return;
@@ -197,11 +228,11 @@ namespace Eygaz
                 out string errorMessage);
             if (!ok)
             {
-                MessageBox.Show("ÙØ´Ù„ Ø§Ù„Ø­ÙØ¸: " + errorMessage);
+                MessageBox.Show("İÔá ÇáÍİÙ: " + errorMessage);
                 return;
             }
 
-            MessageBox.Show("ØªÙ… Ø­ÙØ¸ Ø§Ù„Ø¯Ø±Ø¬Ø§Øª Ø¨Ù†Ø¬Ø§Ø­.");
+            MessageBox.Show("Êã ÍİÙ ÇáÏÑÌÇÊ ÈäÌÇÍ.");
             isDirty = false;
             BtnLoadStudents_Click(sender, e);
         }
@@ -236,3 +267,5 @@ namespace Eygaz
         }
     }
 }
+
+

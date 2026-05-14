@@ -19,6 +19,7 @@ namespace Eygaz
         private int currentSessionId = -1;
         private DataTable dtAttendance;
         private int openSessionId = -1; // لفتح جلسة محددة
+        private Label lblHijriDate;
 
         // =============================================
         // Constructors
@@ -44,11 +45,18 @@ namespace Eygaz
         {
             try
             {
+                attendanceHelper.EnsureAttendanceTermAndDisciplineSchema();
                 f.DataCombo(ClassId, "Classes", "ClassName", "Id", " WHERE IsActive = 0 ORDER BY ClassName");
                 f.DataCombo(SubjectId, "Subjects", "SubjectName", "Id", " WHERE IsActive = 0 ORDER BY SubjectName");
                 f.DataCombo(TeacherId, "Teachers", "FullName", "Id", " WHERE IsActive = 0 ORDER BY FullName");
+                CmbTerm.Items.Clear();
+                CmbTerm.Items.AddRange(new object[] { "First", "Second", "Final" });
+                CmbTerm.SelectedIndex = 0;
 
                 AttendDate.Value = DateTime.Today;
+                EnsureHijriDateLabel();
+                AttendDate.ValueChanged += AttendDate_ValueChanged;
+                UpdateHijriDateLabel();
 
                 GrdAttendStud.OptionsBehavior.Editable = true;
                 GrdAttendStud.RowHeight = 28;
@@ -89,7 +97,14 @@ namespace Eygaz
                 ClassId.SelectedValue = dr["ClassId"].ToString();
                 SubjectId.SelectedValue = dr["SubjectId"].ToString();
                 TeacherId.SelectedValue = dr["TeacherId"].ToString();
+                if (dr.Table.Columns.Contains("Term") && dr["Term"] != DBNull.Value)
+                {
+                    string loadedTerm = dr["Term"].ToString();
+                    if (!string.IsNullOrWhiteSpace(loadedTerm))
+                        CmbTerm.SelectedItem = loadedTerm;
+                }
                 AttendDate.Value = Convert.ToDateTime(dr["SessionDate"]);
+                UpdateHijriDateLabel();
 
                 currentSessionId = sessionId;
                 int classId = Convert.ToInt32(dr["ClassId"]);
@@ -107,6 +122,33 @@ namespace Eygaz
                 MessageBox.Show("خطأ أثناء تحميل الجلسة: " + ex.Message, "خطأ",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+
+        private void EnsureHijriDateLabel()
+        {
+            if (lblHijriDate != null) return;
+
+            lblHijriDate = new Label();
+            lblHijriDate.AutoSize = true;
+            lblHijriDate.ForeColor = Color.DarkSlateBlue;
+            lblHijriDate.Font = new Font("Tahoma", 7.5F, FontStyle.Bold);
+            lblHijriDate.Location = new Point(500, 60);
+            lblHijriDate.Name = "lblHijriDate";
+            PnlData.Controls.Add(lblHijriDate);
+            lblHijriDate.RightToLeft = RightToLeft.No;
+            lblHijriDate.BringToFront();
+        }
+
+        private void AttendDate_ValueChanged(object sender, EventArgs e)
+        {
+            UpdateHijriDateLabel();
+        }
+
+        private void UpdateHijriDateLabel()
+        {
+            if (lblHijriDate == null) return;
+            string hijri = AttendanceHelper.ToHijriDateDisplayArabic(AttendDate.Value.Date);
+            lblHijriDate.Text = hijri;
         }
 
         // =============================================
@@ -134,12 +176,19 @@ namespace Eygaz
                     TeacherId.Focus();
                     return;
                 }
+                if (CmbTerm.SelectedItem == null)
+                {
+                    MessageBox.Show("يجب اختيار الترم", "تنبيه", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    CmbTerm.Focus();
+                    return;
+                }
 
                 int classId = Convert.ToInt32(ClassId.SelectedValue);
                 int subjectId = Convert.ToInt32(SubjectId.SelectedValue);
+                string term = CmbTerm.SelectedItem.ToString();
                 string sessionDate = AttendDate.Value.ToString("yyyy-MM-dd");
 
-                string existingSessionId = attendanceHelper.FindExistingSession(classId, subjectId, sessionDate);
+                string existingSessionId = attendanceHelper.FindExistingSession(classId, subjectId, term, sessionDate);
 
                 if (!string.IsNullOrEmpty(existingSessionId))
                 {
@@ -267,23 +316,41 @@ namespace Eygaz
                 int classId = Convert.ToInt32(ClassId.SelectedValue);
                 int subjectId = Convert.ToInt32(SubjectId.SelectedValue);
                 int teacherId = Convert.ToInt32(TeacherId.SelectedValue);
+                if (CmbTerm.SelectedItem == null)
+                {
+                    MessageBox.Show("يرجى اختيار الترم.", "تنبيه", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+                string term = CmbTerm.SelectedItem.ToString();
                 string sessionDate = AttendDate.Value.ToString("yyyy-MM-dd");
 
                 if (currentSessionId <= 0)
                 {
-                    currentSessionId = attendanceHelper.CreateSession(classId, subjectId, teacherId, sessionDate);
+                    currentSessionId = attendanceHelper.CreateSession(classId, subjectId, teacherId, term, sessionDate);
                     if (currentSessionId <= 0)
                     {
-                        //MessageBox.Show("حدث خطأ أثناء إنشاء جلسة الحضور", "خطأ",
-                        //    MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        //return;
+                        MessageBox.Show("حدث خطأ أثناء إنشاء جلسة الحضور", "خطأ",
+                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return;
                     }
                 }
 
                 bool success = attendanceHelper.SaveBulkAttendance(currentSessionId, dtAttendance);
 
                 if (success)
-                    MessageBox.Show("تم حفظ الحضور بنجاح", "تنبيه", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                {
+                    bool disciplineOk = attendanceHelper.RecalculateDisciplineForClassTerm(
+                        classId,
+                        term,
+                        sessionDate,
+                        100,
+                        out string disciplineError);
+
+                    if (disciplineOk)
+                        MessageBox.Show("تم حفظ الحضور بنجاح وتحديث درجة المواظبة  تلقائياً.", "تنبيه", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    else
+                        MessageBox.Show("تم حفظ الحضور، لكن تعذر تحديث درجة المواظبة : " + disciplineError, "تنبيه", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
                 else
                     MessageBox.Show("حدث خطأ أثناء حفظ بعض سجلات الحضور", "خطأ", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
@@ -398,3 +465,5 @@ namespace Eygaz
         }
     }
 }
+
+

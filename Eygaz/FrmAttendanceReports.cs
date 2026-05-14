@@ -1,5 +1,9 @@
+﻿using DevExpress.XtraPrinting;
 using System;
+using System.Collections.Generic;
 using System.Data;
+using System.Drawing;
+using System.Drawing.Printing;
 using System.Windows.Forms;
 
 namespace Eygaz
@@ -8,6 +12,8 @@ namespace Eygaz
     {
         Func f = new Func();
         AttendanceHelper helper = new AttendanceHelper();
+        private Label lblHijriFrom;
+        private Label lblHijriTo;
 
         public FrmAttendanceReports()
         {
@@ -47,6 +53,10 @@ namespace Eygaz
                 // التواريخ
                 DtFrom.Value = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
                 DtTo.Value = DateTime.Today;
+                EnsureHijriDateLabels();
+                DtFrom.ValueChanged += DateRange_ValueChanged;
+                DtTo.ValueChanged += DateRange_ValueChanged;
+                UpdateHijriDateLabels();
 
                 UpdateFilterVisibility();
             }
@@ -86,6 +96,50 @@ namespace Eygaz
             lblDateFrom.Visible = showDateRange;
             DtTo.Visible = showDateRange;
             lblDateTo.Visible = showDateRange;
+            if (lblHijriFrom != null) lblHijriFrom.Visible = showDateRange;
+            if (lblHijriTo != null) lblHijriTo.Visible = showDateRange;
+            if (showDateRange) UpdateHijriDateLabels();
+        }
+
+        private void EnsureHijriDateLabels()
+        {
+            if (lblHijriFrom == null)
+            {
+                lblHijriFrom = new Label();
+                lblHijriFrom.AutoSize = true;
+                lblHijriFrom.ForeColor = Color.DarkSlateBlue;
+                lblHijriFrom.Font = new Font("Tahoma", 7.5F, FontStyle.Bold);
+                lblHijriFrom.Location = new System.Drawing.Point(360, 63);
+                lblHijriFrom.Name = "lblHijriFrom";
+                lblHijriFrom.RightToLeft = RightToLeft.No;
+                PnlFilter.Controls.Add(lblHijriFrom);
+            }
+
+            if (lblHijriTo == null)
+            {
+                lblHijriTo = new Label();
+                lblHijriTo.AutoSize = true;
+                lblHijriTo.ForeColor = Color.DarkSlateBlue;
+                lblHijriTo.Font = new Font("Tahoma", 7.5F, FontStyle.Bold);
+                lblHijriTo.Location = new System.Drawing.Point(210, 63);
+                lblHijriTo.Name = "lblHijriTo";
+                lblHijriTo.RightToLeft = RightToLeft.No;
+                PnlFilter.Controls.Add(lblHijriTo);
+            }
+        }
+
+        private void DateRange_ValueChanged(object sender, EventArgs e)
+        {
+            if (CmbReportType.SelectedIndex == 1 || CmbReportType.SelectedIndex == 3)
+                UpdateHijriDateLabels();
+        }
+
+        private void UpdateHijriDateLabels()
+        {
+            if (lblHijriFrom != null)
+                lblHijriFrom.Text = AttendanceHelper.ToHijriDateDisplayArabic(DtFrom.Value.Date);
+            if (lblHijriTo != null)
+                lblHijriTo.Text = AttendanceHelper.ToHijriDateDisplayArabic(DtTo.Value.Date);
         }
 
         // =============================================
@@ -180,6 +234,120 @@ namespace Eygaz
             catch (Exception ex)
             {
                 MessageBox.Show("خطأ أثناء إنشاء التقرير: " + ex.Message, "خطأ",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        /// <summary>نص توضيحي للطباعة حسب نوع التقرير والفلاتر الحالية.</summary>
+        private string BuildPrintHeader()
+        {
+            int rt = CmbReportType.SelectedIndex;
+            var lines = new List<string>
+            {
+                "تقارير الحضور والغياب",
+                CmbReportType.Text ?? ""
+            };
+
+            string classText = "";
+            try
+            {
+                if (CmbClass.SelectedValue != null && !string.IsNullOrWhiteSpace(CmbClass.SelectedValue.ToString()))
+                    classText = CmbClass.Text ?? "";
+            }
+            catch { }
+
+            if (rt == 0)
+            {
+                lines.Add($"الطالب: {CmbStudent.Text ?? ""}");
+                if (!string.IsNullOrWhiteSpace(classText))
+                    lines.Add($"الفصل: {classText}");
+            }
+            else if (rt == 1 || rt == 3)
+            {
+                lines.Add(string.IsNullOrWhiteSpace(classText) ? "الفصل: الكل" : $"الفصل: {classText}");
+                lines.Add($"من {DtFrom.Value:yyyy-MM-dd} إلى {DtTo.Value:yyyy-MM-dd} (ميلادي)");
+                lines.Add($"هجرياً: من {AttendanceHelper.ToHijriDateDisplayArabic(DtFrom.Value.Date)} إلى {AttendanceHelper.ToHijriDateDisplayArabic(DtTo.Value.Date)}");
+            }
+            else if (rt == 2)
+            {
+                if (!string.IsNullOrWhiteSpace(classText))
+                    lines.Add($"الفصل: {classText}");
+            }
+
+            if (rt == 0 || rt == 2 || rt == 4)
+                lines.Add($"الشهر: {CmbMonth.Text} — السنة: {CmbYear.Text}");
+
+            return string.Join("\r\n", lines);
+        }
+
+        private void BtnExport_Click(object sender, EventArgs e)
+        {
+            if (GVReport.DataSource == null || ((DataTable)GVReport.DataSource).Rows.Count == 0)
+            {
+                MessageBox.Show("لا توجد بيانات لتصديرها. اعرض التقرير أولاً.", "تنبيه",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            try
+            {
+                using (SaveFileDialog sfd = new SaveFileDialog())
+                {
+                    sfd.Filter = "Excel Files|*.xlsx";
+                    sfd.Title = "حفظ تقرير الحضور والغياب — Excel";
+                    sfd.FileName = "تقرير_الحضور_والغياب.xlsx";
+                    if (sfd.ShowDialog() == DialogResult.OK)
+                    {
+                        GrdReport.ExportToXlsx(sfd.FileName);
+                        MessageBox.Show("تم التصدير بنجاح.", "تصدير", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        System.Diagnostics.Process.Start(sfd.FileName);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("خطأ أثناء التصدير: " + ex.Message, "خطأ",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void BtnPrint_Click(object sender, EventArgs e)
+        {
+            if (GVReport.DataSource == null || ((DataTable)GVReport.DataSource).Rows.Count == 0)
+            {
+                MessageBox.Show("لا توجد بيانات لطباعتها. اعرض التقرير أولاً.", "تنبيه",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            try
+            {
+                string headerText = BuildPrintHeader();
+                using (PrintingSystem printingSystem = new PrintingSystem())
+                {
+                    PrintableComponentLink link = new PrintableComponentLink(printingSystem)
+                    {
+                        Component = GVReport,
+                        Margins = new Margins(50, 50, 80, 50),
+                        PaperKind = PaperKind.A4,
+                    };
+
+                    PageHeaderFooter phf = link.PageHeaderFooter as PageHeaderFooter;
+                    if (phf != null)
+                    {
+                        phf.Header.Content.Clear();
+                        phf.Header.Content.AddRange(new[] { "", "", headerText });
+                        phf.Header.Font = new Font("Tahoma", 11f, FontStyle.Bold);
+                        phf.Header.LineAlignment = BrickAlignment.Center;
+                    }
+
+                    link.CreateDocument();
+                    link.ShowRibbonPreviewDialog(GVReport.LookAndFeel);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("خطأ أثناء الطباعة: " + ex.Message, "خطأ",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }

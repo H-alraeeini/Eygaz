@@ -68,6 +68,7 @@ namespace Eygaz
             f.DataCombo(Gender, "Flags", "FlagName", "FlagCode", " where FlagType=1 order by FlagCode desc");
             f.DataCombo(ClassId, "Classes", "ClassName", "Id", " where IsActive=0 order by Id ");
 
+
         }
         private void clearCntrl()
         {

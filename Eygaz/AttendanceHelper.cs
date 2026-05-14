@@ -2,6 +2,7 @@ using System;
 using System.Data;
 using System.Data.SQLite;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Windows.Forms;
 
@@ -13,6 +14,76 @@ namespace Eygaz
     public class AttendanceHelper
     {
         private Func f = new Func();
+        private const string DisciplineSubjectName = "المواظبة ";
+        private static readonly string[] HijriMonthNamesArabic = new[]
+        {
+            "محرم",
+            "صفر",
+            "ربيع الأول",
+            "ربيع الآخر",
+            "جمادى الأولى",
+            "جمادى الآخرة",
+            "رجب",
+            "شعبان",
+            "رمضان",
+            "شوال",
+            "ذي القعده",
+            "ذي الحجه"
+        };
+
+        public static string ToHijriDateString(DateTime date)
+        {
+            var hijri = new HijriCalendar();
+            int y = hijri.GetYear(date);
+            int m = hijri.GetMonth(date);
+            int d = hijri.GetDayOfMonth(date);
+            return y.ToString("0000", CultureInfo.InvariantCulture) + "-" +
+                   m.ToString("00", CultureInfo.InvariantCulture) + "-" +
+                   d.ToString("00", CultureInfo.InvariantCulture);
+        }
+
+        public static string ToHijriDateStringFromGregorianIso(string gregorianIsoDate)
+        {
+            if (string.IsNullOrWhiteSpace(gregorianIsoDate))
+                return "";
+
+            if (!DateTime.TryParseExact(gregorianIsoDate.Trim(), "yyyy-MM-dd",
+                CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime dt))
+            {
+                return "";
+            }
+
+            return ToHijriDateString(dt);
+        }
+
+        public static string ToHijriDateDisplayArabic(DateTime date)
+        {
+            var hijri = new HijriCalendar();
+            int y = hijri.GetYear(date);
+            int m = hijri.GetMonth(date);
+            int d = hijri.GetDayOfMonth(date);
+
+            string monthName = (m >= 1 && m <= 12) ? HijriMonthNamesArabic[m - 1] : "";
+            string baseDate = y.ToString("0000", CultureInfo.InvariantCulture) + "-" +
+                              m.ToString("00", CultureInfo.InvariantCulture) + "-" +
+                              d.ToString("00", CultureInfo.InvariantCulture);
+            baseDate = ToWesternDigits(baseDate);
+
+            string text = string.IsNullOrWhiteSpace(monthName)
+                ? baseDate + " هجري"
+                : baseDate + " هجري (" + monthName + " )";
+            return "\u200E" + text + "\u200E";
+        }
+
+        private static string ToWesternDigits(string value)
+        {
+            if (string.IsNullOrEmpty(value)) return value;
+            return value
+                .Replace('٠', '0').Replace('١', '1').Replace('٢', '2').Replace('٣', '3').Replace('٤', '4')
+                .Replace('٥', '5').Replace('٦', '6').Replace('٧', '7').Replace('٨', '8').Replace('٩', '9')
+                .Replace('۰', '0').Replace('۱', '1').Replace('۲', '2').Replace('۳', '3').Replace('۴', '4')
+                .Replace('۵', '5').Replace('۶', '6').Replace('۷', '7').Replace('۸', '8').Replace('۹', '9');
+        }
 
         // =============================================
         // 1. جلب طلاب فصل معين
@@ -30,12 +101,14 @@ namespace Eygaz
         // =============================================
         // 2. البحث عن جلسة موجودة
         // =============================================
-        public string FindExistingSession(int classId, int subjectId, string sessionDate)
+        public string FindExistingSession(int classId, int subjectId, string term, string sessionDate)
         {
+            EnsureAttendanceTermColumn();
             string sql = $@"
                 SELECT Id FROM AttendanceSessions
                 WHERE ClassId = {classId}
                   AND SubjectId = {subjectId}
+                  AND Term = '{term}'
                   AND SessionDate = '{sessionDate}'";
             return f.GetScalar(sql);
         }
@@ -43,17 +116,20 @@ namespace Eygaz
         // =============================================
         // 3. إنشاء جلسة حضور جديدة
         // =============================================
-        public int CreateSession(int classId, int subjectId, int teacherId, string sessionDate, string notes = "")
+        public int CreateSession(int classId, int subjectId, int teacherId, string term, string sessionDate, string notes = "")
         {
+            EnsureAttendanceTermColumn();
+            EnsureHijriDateColumns();
+            string sessionDateHijri = ToHijriDateStringFromGregorianIso(sessionDate);
             string sql = $@"
-                INSERT INTO AttendanceSessions (ClassId, SubjectId, TeacherId, SessionDate, Notes)
-                VALUES ({classId}, {subjectId}, {teacherId}, '{sessionDate}', '{notes}')";
+                INSERT INTO AttendanceSessions (ClassId, SubjectId, TeacherId, Term, SessionDate, SessionDateHijri, Notes)
+                VALUES ({classId}, {subjectId}, {teacherId}, '{term}', '{sessionDate}', '{sessionDateHijri}', '{notes}')";
 
             string result = f.Trans(sql);
             if (result != "DONE...")
                 return -1;
 
-            string idStr = f.GetScalar($@"SELECT max(id) from AttendanceSessions where ClassId = {classId} and  SubjectId = {subjectId} and SessionDate = '{sessionDate}' and TeacherId={teacherId}");
+            string idStr = f.GetScalar($@"SELECT max(id) from AttendanceSessions where ClassId = {classId} and SubjectId = {subjectId} and Term = '{term}' and SessionDate = '{sessionDate}' and TeacherId = {teacherId}");
             return string.IsNullOrEmpty(idStr) ? -1 : int.Parse(idStr);
         }
 
@@ -150,6 +226,7 @@ namespace Eygaz
                 SELECT
                     s.FullName AS 'اسم الطالب',
                     sess.SessionDate AS 'التاريخ',
+                    COALESCE(sess.SessionDateHijri, '') AS 'التاريخ الهجري',
                     sub.SubjectName AS 'المادة',
                     c.ClassName AS 'الفصل',
                     ast.StatusName AS 'الحالة',
@@ -179,6 +256,7 @@ namespace Eygaz
                 SELECT
                     s.FullName AS 'اسم الطالب',
                     sess.SessionDate AS 'التاريخ',
+                    COALESCE(sess.SessionDateHijri, '') AS 'التاريخ الهجري',
                     sub.SubjectName AS 'المادة',
                     ast.StatusName AS 'الحالة'
                 FROM StudentAttendance sa
@@ -204,7 +282,8 @@ namespace Eygaz
                     s.FullName AS 'اسم الطالب',
                     c.ClassName AS 'الفصل',
                     COUNT(*) AS 'عدد مرات الغياب',
-                    GROUP_CONCAT(sess.SessionDate, ', ') AS 'تواريخ الغياب'
+                    GROUP_CONCAT(sess.SessionDate, ', ') AS 'تواريخ الغياب',
+                    GROUP_CONCAT(COALESCE(sess.SessionDateHijri, ''), ', ') AS 'تواريخ الغياب (هجري)'
                 FROM StudentAttendance sa
                 INNER JOIN AttendanceSessions sess ON sa.SessionId = sess.Id
                 INNER JOIN Students s ON sa.StudentId = s.Id
@@ -228,7 +307,8 @@ namespace Eygaz
                     s.FullName AS 'اسم الطالب',
                     c.ClassName AS 'الفصل',
                     COUNT(*) AS 'عدد مرات التأخير',
-                    GROUP_CONCAT(sess.SessionDate, ', ') AS 'تواريخ التأخير'
+                    GROUP_CONCAT(sess.SessionDate, ', ') AS 'تواريخ التأخير',
+                    GROUP_CONCAT(COALESCE(sess.SessionDateHijri, ''), ', ') AS 'تواريخ التأخير (هجري)'
                 FROM StudentAttendance sa
                 INNER JOIN AttendanceSessions sess ON sa.SessionId = sess.Id
                 INNER JOIN Students s ON sa.StudentId = s.Id
@@ -326,19 +406,23 @@ namespace Eygaz
         // =============================================
         // 15. جلب جميع الجلسات مع الفلترة (شاشة إدارة الجلسات)
         // =============================================
-        public DataTable GetSessions(int classId, int subjectId, int teacherId, string dateFrom, string dateTo)
+        public DataTable GetSessions(int classId, int subjectId, int teacherId, string dateFrom, string dateTo, string term = "")
         {
+            EnsureAttendanceTermColumn();
             string where = "WHERE 1=1";
             if (classId > 0) where += $" AND sess.ClassId = {classId}";
             if (subjectId > 0) where += $" AND sess.SubjectId = {subjectId}";
             if (teacherId > 0) where += $" AND sess.TeacherId = {teacherId}";
+            if (!string.IsNullOrWhiteSpace(term)) where += $" AND sess.Term = '{term}'";
             if (!string.IsNullOrEmpty(dateFrom)) where += $" AND sess.SessionDate >= '{dateFrom}'";
             if (!string.IsNullOrEmpty(dateTo)) where += $" AND sess.SessionDate <= '{dateTo}'";
 
             string sql = $@"
                 SELECT
                     sess.Id AS SessionId,
+                    sess.Term,
                     sess.SessionDate,
+                    sess.SessionDateHijri,
                     c.ClassName,
                     sub.SubjectName,
                     t.FullName AS TeacherName,
@@ -373,10 +457,11 @@ namespace Eygaz
         // =============================================
         public DataTable GetSessionDetails(int sessionId)
         {
+            EnsureAttendanceTermColumn();
             string sql = $@"
                 SELECT
                     sess.Id, sess.ClassId, sess.SubjectId, sess.TeacherId,
-                    sess.SessionDate, sess.Notes,
+                    sess.Term, sess.SessionDate, sess.SessionDateHijri, sess.Notes,
                     c.ClassName, sub.SubjectName, t.FullName AS TeacherName
                 FROM AttendanceSessions sess
                 INNER JOIN Classes c ON sess.ClassId = c.Id
@@ -389,14 +474,311 @@ namespace Eygaz
         // =============================================
         // 18. تحديث جلسة حضور
         // =============================================
-        public bool UpdateSession(int sessionId, int classId, int subjectId, int teacherId, string sessionDate, string notes)
+        public bool UpdateSession(int sessionId, int classId, int subjectId, int teacherId, string term, string sessionDate, string notes)
         {
+            EnsureAttendanceTermColumn();
+            EnsureHijriDateColumns();
+            string sessionDateHijri = ToHijriDateStringFromGregorianIso(sessionDate);
             string sql = $@"UPDATE AttendanceSessions
                 SET ClassId = {classId}, SubjectId = {subjectId},
-                    TeacherId = {teacherId}, SessionDate = '{sessionDate}', Notes = '{notes}'
+                    TeacherId = {teacherId}, Term = '{term}', SessionDate = '{sessionDate}', SessionDateHijri = '{sessionDateHijri}', Notes = '{notes}'
                 WHERE Id = {sessionId}";
             string result = f.Trans(sql);
             return result == "DONE...";
+        }
+
+        public void EnsureAttendanceTermAndDisciplineSchema()
+        {
+            EnsureAttendanceTermColumn();
+            EnsureHijriDateColumns();
+            EnsureDisciplineSubject();
+        }
+
+        public bool RecalculateDisciplineForClassTerm(int classId, string term, string examDate, double maxScore, out string errorMessage)
+        {
+            errorMessage = "";
+            if (classId <= 0 || string.IsNullOrWhiteSpace(term))
+            {
+                errorMessage = "بيانات الفصل أو الترم غير مكتملة.";
+                return false;
+            }
+
+            EnsureAttendanceTermAndDisciplineSchema();
+
+            using (var cn = new SQLiteConnection(@"Data Source=" + Func.dbname))
+            {
+                cn.Open();
+                using (var timeoutCmd = new SQLiteCommand("PRAGMA busy_timeout = 5000;", cn))
+                {
+                    timeoutCmd.ExecuteNonQuery();
+                }
+
+                using (var tx = cn.BeginTransaction())
+                {
+                    try
+                    {
+                        int disciplineSubjectId = GetOrCreateDisciplineSubjectId(cn, tx);
+                        if (disciplineSubjectId <= 0)
+                        {
+                            tx.Rollback();
+                            errorMessage = "تعذر إنشاء/الحصول على مادة المواظبة .";
+                            return false;
+                        }
+
+                        int examId = GetExamId(classId, disciplineSubjectId, term, cn, tx);
+                        if (examId <= 0)
+                        {
+                            examId = CreateExam(
+                                disciplineSubjectId,
+                                classId,
+                                term,
+                                string.IsNullOrWhiteSpace(examDate) ? DateTime.Today.ToString("yyyy-MM-dd") : examDate,
+                                maxScore > 0 ? maxScore : 100,
+                                "درجة المواظبة  (محسوبة من الحضور والغياب)",
+                                cn,
+                                tx);
+                        }
+
+                        if (examId <= 0)
+                        {
+                            tx.Rollback();
+                            errorMessage = "تعذر إنشاء اختبار المواظبة .";
+                            return false;
+                        }
+
+                        double effectiveMaxScore = GetExamMaxScoreInternal(examId, maxScore > 0 ? maxScore : 100, cn, tx);
+
+                        using (var cmd = new SQLiteCommand(@"
+                            SELECT
+                                s.Id AS StudentId,
+                                COALESCE(SUM(dayded.DailyDeduction), 0) AS TotalDeduction
+                            FROM Students s
+                            LEFT JOIN (
+                                SELECT
+                                    sa.StudentId,
+                                    sess.SessionDate,
+                                    MAX(
+                                        CASE sa.StatusId
+                                            WHEN 2 THEN 4
+                                            WHEN 4 THEN 2
+                                            WHEN 3 THEN 2
+                                            ELSE 0
+                                        END
+                                    ) AS DailyDeduction
+                                FROM StudentAttendance sa
+                                INNER JOIN AttendanceSessions sess ON sa.SessionId = sess.Id
+                                WHERE sess.ClassId = @classId
+                                  AND sess.Term = @term
+                                GROUP BY sa.StudentId, sess.SessionDate
+                            ) dayded ON dayded.StudentId = s.Id
+                            WHERE s.ClassId = @classId
+                              AND s.IsActive = 0
+                            GROUP BY s.Id;", cn, tx))
+                        {
+                            cmd.Parameters.AddWithValue("@classId", classId);
+                            cmd.Parameters.AddWithValue("@term", term);
+
+                            using (var reader = cmd.ExecuteReader())
+                            {
+                                while (reader.Read())
+                                {
+                                    int studentId = Convert.ToInt32(reader["StudentId"]);
+                                    double totalDeduction = reader["TotalDeduction"] == DBNull.Value ? 0 : Convert.ToDouble(reader["TotalDeduction"]);
+                                    double score = effectiveMaxScore - totalDeduction;
+                                    if (score < 0) score = 0;
+
+                                    using (var saveCmd = new SQLiteCommand(@"
+                                        INSERT INTO ExamResults (ExamId, StudentId, Score, LastSurah, Notes)
+                                        VALUES (@examId, @studentId, @score, NULL, @notes)
+                                        ON CONFLICT(ExamId, StudentId)
+                                        DO UPDATE SET
+                                            Score = excluded.Score,
+                                            Notes = excluded.Notes;", cn, tx))
+                                    {
+                                        saveCmd.Parameters.AddWithValue("@examId", examId);
+                                        saveCmd.Parameters.AddWithValue("@studentId", studentId);
+                                        saveCmd.Parameters.AddWithValue("@score", score);
+                                        saveCmd.Parameters.AddWithValue("@notes", "محسوبة تلقائياً من الحضور والغياب");
+                                        saveCmd.ExecuteNonQuery();
+                                    }
+                                }
+                            }
+                        }
+
+                        tx.Commit();
+                        return true;
+                    }
+                    catch (Exception ex)
+                    {
+                        tx.Rollback();
+                        errorMessage = ex.Message;
+                        return false;
+                    }
+                }
+            }
+        }
+
+        private void EnsureAttendanceTermColumn()
+        {
+            using (var cn = new SQLiteConnection(@"Data Source=" + Func.dbname))
+            {
+                cn.Open();
+                using (var timeoutCmd = new SQLiteCommand("PRAGMA busy_timeout = 5000;", cn))
+                {
+                    timeoutCmd.ExecuteNonQuery();
+                }
+
+                bool hasTerm = false;
+                using (var cmd = new SQLiteCommand("PRAGMA table_info(AttendanceSessions);", cn))
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        string colName = reader["name"] == DBNull.Value ? "" : reader["name"].ToString();
+                        if (string.Equals(colName, "Term", StringComparison.OrdinalIgnoreCase))
+                        {
+                            hasTerm = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (!hasTerm)
+                {
+                    using (var alterCmd = new SQLiteCommand("ALTER TABLE AttendanceSessions ADD COLUMN Term TEXT NOT NULL DEFAULT 'First';", cn))
+                    {
+                        alterCmd.ExecuteNonQuery();
+                    }
+                }
+
+                using (var idxDrop = new SQLiteCommand("DROP INDEX IF EXISTS UQ_Session_Class_Subject_Date;", cn))
+                {
+                    idxDrop.ExecuteNonQuery();
+                }
+                using (var idxCreate = new SQLiteCommand("CREATE UNIQUE INDEX IF NOT EXISTS UQ_Session_Class_Subject_Term_Date ON AttendanceSessions (ClassId, SubjectId, Term, SessionDate);", cn))
+                {
+                    idxCreate.ExecuteNonQuery();
+                }
+            }
+        }
+
+        private static bool HasColumn(SQLiteConnection cn, string table, string column)
+        {
+            using (var cmd = new SQLiteCommand("PRAGMA table_info(" + table + ");", cn))
+            using (var reader = cmd.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    string colName = reader["name"] == DBNull.Value ? "" : reader["name"].ToString();
+                    if (string.Equals(colName, column, StringComparison.OrdinalIgnoreCase))
+                        return true;
+                }
+            }
+
+            return false;
+        }
+
+        private void EnsureHijriDateColumns()
+        {
+            using (var cn = new SQLiteConnection(@"Data Source=" + Func.dbname))
+            {
+                cn.Open();
+                using (var timeoutCmd = new SQLiteCommand("PRAGMA busy_timeout = 5000;", cn))
+                {
+                    timeoutCmd.ExecuteNonQuery();
+                }
+
+                if (!HasColumn(cn, "AttendanceSessions", "SessionDateHijri"))
+                {
+                    using (var cmd = new SQLiteCommand("ALTER TABLE AttendanceSessions ADD COLUMN SessionDateHijri TEXT DEFAULT '';", cn))
+                        cmd.ExecuteNonQuery();
+                }
+
+                if (!HasColumn(cn, "TeacherAttendance", "AttendanceDateHijri"))
+                {
+                    using (var cmd = new SQLiteCommand("ALTER TABLE TeacherAttendance ADD COLUMN AttendanceDateHijri TEXT DEFAULT '';", cn))
+                        cmd.ExecuteNonQuery();
+                }
+
+                if (!HasColumn(cn, "Exams", "ExamDateHijri"))
+                {
+                    using (var cmd = new SQLiteCommand("ALTER TABLE Exams ADD COLUMN ExamDateHijri TEXT DEFAULT '';", cn))
+                        cmd.ExecuteNonQuery();
+                }
+            }
+        }
+
+        private void EnsureDisciplineSubject()
+        {
+            string subjectId = f.GetScalar("SELECT Id FROM Subjects WHERE SubjectName = @name LIMIT 1;",
+                new Dictionary<string, object> { { "@name", DisciplineSubjectName } });
+            if (!string.IsNullOrWhiteSpace(subjectId)) return;
+
+            int rows = f.ExecuteNonQuery(@"
+                INSERT INTO Subjects (SubjectName, Description, IsActive)
+                VALUES (@name, @desc, 0);",
+                new Dictionary<string, object>
+                {
+                    { "@name", DisciplineSubjectName },
+                    { "@desc", "تُحسب تلقائياً من الحضور والغياب" }
+                });
+
+            if (rows >= 0) return;
+
+            // Fallback for old schemas that may not have Description/IsActive columns.
+            f.ExecuteNonQuery("INSERT INTO Subjects (SubjectName) VALUES (@name);",
+                new Dictionary<string, object> { { "@name", DisciplineSubjectName } });
+        }
+
+        private int GetOrCreateDisciplineSubjectId(SQLiteConnection cn, SQLiteTransaction tx)
+        {
+            using (var getCmd = new SQLiteCommand("SELECT Id FROM Subjects WHERE SubjectName = @name LIMIT 1;", cn, tx))
+            {
+                getCmd.Parameters.AddWithValue("@name", DisciplineSubjectName);
+                object existing = getCmd.ExecuteScalar();
+                if (existing != null && existing != DBNull.Value)
+                    return Convert.ToInt32(existing);
+            }
+
+            using (var insertCmd = new SQLiteCommand(@"
+                INSERT INTO Subjects (SubjectName, Description, IsActive)
+                VALUES (@name, @desc, 0);", cn, tx))
+            {
+                insertCmd.Parameters.AddWithValue("@name", DisciplineSubjectName);
+                insertCmd.Parameters.AddWithValue("@desc", "تُحسب تلقائياً من الحضور والغياب");
+                try
+                {
+                    int rows = insertCmd.ExecuteNonQuery();
+                    if (rows <= 0) return 0;
+                }
+                catch
+                {
+                    using (var fallback = new SQLiteCommand("INSERT INTO Subjects (SubjectName) VALUES (@name);", cn, tx))
+                    {
+                        fallback.Parameters.AddWithValue("@name", DisciplineSubjectName);
+                        int rows = fallback.ExecuteNonQuery();
+                        if (rows <= 0) return 0;
+                    }
+                }
+            }
+
+            using (var idCmd = new SQLiteCommand("SELECT last_insert_rowid();", cn, tx))
+            {
+                object id = idCmd.ExecuteScalar();
+                if (id == null || id == DBNull.Value) return 0;
+                return Convert.ToInt32(id);
+            }
+        }
+
+        private double GetExamMaxScoreInternal(int examId, double fallback, SQLiteConnection cn, SQLiteTransaction tx)
+        {
+            using (var cmd = new SQLiteCommand("SELECT MaxScore FROM Exams WHERE Id = @id;", cn, tx))
+            {
+                cmd.Parameters.AddWithValue("@id", examId);
+                object score = cmd.ExecuteScalar();
+                if (score == null || score == DBNull.Value) return fallback;
+                return Convert.ToDouble(score);
+            }
         }
 
         // =============================================
@@ -497,6 +879,7 @@ namespace Eygaz
                 SELECT
                     s.FullName AS 'اسم الطالب',
                     sess.SessionDate AS 'التاريخ',
+                    COALESCE(sess.SessionDateHijri, '') AS 'التاريخ الهجري',
                     sub.SubjectName AS 'المادة',
                     c.ClassName AS 'الفصل',
                     t.FullName AS 'المدرس',
@@ -656,6 +1039,8 @@ namespace Eygaz
         // =============================================
         public bool SaveTeacherAttendance(int teacherId, string date, int statusId, string notes = "")
         {
+            EnsureHijriDateColumns();
+            string dateHijri = ToHijriDateStringFromGregorianIso(date);
             string existingId = f.GetScalar($@"
                 SELECT Id FROM TeacherAttendance
                 WHERE TeacherId = {teacherId} AND AttendanceDate = '{date}'");
@@ -664,13 +1049,13 @@ namespace Eygaz
             if (!string.IsNullOrEmpty(existingId))
             {
                 sql = $@"UPDATE TeacherAttendance
-                    SET StatusId = {statusId}, Notes = '{notes}'
+                    SET StatusId = {statusId}, AttendanceDateHijri = '{dateHijri}', Notes = '{notes}'
                     WHERE Id = {existingId}";
             }
             else
             {
-                sql = $@"INSERT INTO TeacherAttendance (TeacherId, AttendanceDate, StatusId, Notes)
-                    VALUES ({teacherId}, '{date}', {statusId}, '{notes}')";
+                sql = $@"INSERT INTO TeacherAttendance (TeacherId, AttendanceDate, AttendanceDateHijri, StatusId, Notes)
+                    VALUES ({teacherId}, '{date}', '{dateHijri}', {statusId}, '{notes}')";
             }
 
             string result = f.Trans(sql);
@@ -731,6 +1116,7 @@ namespace Eygaz
                 SELECT
                     t.FullName AS 'اسم المدرس',
                     ta.AttendanceDate AS 'التاريخ',
+                    COALESCE(ta.AttendanceDateHijri, '') AS 'التاريخ الهجري',
                     ast.StatusName AS 'الحالة',
                     ta.Notes AS 'ملاحظات'
                 FROM TeacherAttendance ta
@@ -752,7 +1138,8 @@ namespace Eygaz
                     t.FullName AS 'اسم المدرس',
                     t.Phone AS 'رقم الهاتف',
                     COUNT(*) AS 'عدد مرات الغياب',
-                    GROUP_CONCAT(ta.AttendanceDate, ', ') AS 'تواريخ الغياب'
+                    GROUP_CONCAT(ta.AttendanceDate, ', ') AS 'تواريخ الغياب',
+                    GROUP_CONCAT(COALESCE(ta.AttendanceDateHijri, ''), ', ') AS 'تواريخ الغياب (هجري)'
                 FROM TeacherAttendance ta
                 INNER JOIN Teachers t ON ta.TeacherId = t.Id
                 WHERE ta.StatusId = 2
@@ -891,7 +1278,8 @@ namespace Eygaz
                     t.FullName AS 'اسم المدرس',
                     t.Phone AS 'رقم الهاتف',
                     COUNT(*) AS 'عدد مرات التأخير',
-                    GROUP_CONCAT(ta.AttendanceDate, ', ') AS 'تواريخ التأخير'
+                    GROUP_CONCAT(ta.AttendanceDate, ', ') AS 'تواريخ التأخير',
+                    GROUP_CONCAT(COALESCE(ta.AttendanceDateHijri, ''), ', ') AS 'تواريخ التأخير (هجري)'
                 FROM TeacherAttendance ta
                 INNER JOIN Teachers t ON ta.TeacherId = t.Id
                 WHERE ta.StatusId = 3
@@ -960,9 +1348,11 @@ namespace Eygaz
         // =============================================
         public int CreateExam(int subjectId, int classId, string term, string examDate, double maxScore, string description)
         {
+            EnsureHijriDateColumns();
+            string examDateHijri = ToHijriDateStringFromGregorianIso(examDate);
             string sql = @"
-                INSERT INTO Exams (SubjectId, ClassId, Term, ExamDate, MaxScore, Description)
-                VALUES (@subjectId, @classId, @term, @examDate, @maxScore, @description);";
+                INSERT INTO Exams (SubjectId, ClassId, Term, ExamDate, ExamDateHijri, MaxScore, Description)
+                VALUES (@subjectId, @classId, @term, @examDate, @examDateHijri, @maxScore, @description);";
 
             var parameters = new Dictionary<string, object>
             {
@@ -970,6 +1360,7 @@ namespace Eygaz
                 { "@classId", classId },
                 { "@term", term },
                 { "@examDate", examDate },
+                { "@examDateHijri", examDateHijri },
                 { "@maxScore", maxScore },
                 { "@description", description ?? "" }
             };
@@ -1030,6 +1421,7 @@ namespace Eygaz
                     sub.SubjectName AS 'المادة',
                     e.Term AS 'الترم',
                     e.ExamDate AS 'تاريخ الاختبار',
+                    COALESCE(e.ExamDateHijri, '') AS 'التاريخ الهجري للاختبار',
                     er.Score AS 'الدرجة',
                     e.MaxScore AS 'الدرجة العظمى',
                     ROUND((er.Score * 100.0) / e.MaxScore, 1) AS 'النسبة',
@@ -1497,14 +1889,16 @@ namespace Eygaz
             SQLiteConnection cn,
             SQLiteTransaction tx)
         {
+            string examDateHijri = ToHijriDateStringFromGregorianIso(examDate);
             using (var insertCmd = new SQLiteCommand(@"
-                INSERT INTO Exams (SubjectId, ClassId, Term, ExamDate, MaxScore, Description)
-                VALUES (@subjectId, @classId, @term, @examDate, @maxScore, @description);", cn, tx))
+                INSERT INTO Exams (SubjectId, ClassId, Term, ExamDate, ExamDateHijri, MaxScore, Description)
+                VALUES (@subjectId, @classId, @term, @examDate, @examDateHijri, @maxScore, @description);", cn, tx))
             {
                 insertCmd.Parameters.AddWithValue("@subjectId", subjectId);
                 insertCmd.Parameters.AddWithValue("@classId", classId);
                 insertCmd.Parameters.AddWithValue("@term", term ?? "");
                 insertCmd.Parameters.AddWithValue("@examDate", examDate ?? "");
+                insertCmd.Parameters.AddWithValue("@examDateHijri", examDateHijri);
                 insertCmd.Parameters.AddWithValue("@maxScore", maxScore);
                 insertCmd.Parameters.AddWithValue("@description", description ?? "");
 

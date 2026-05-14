@@ -1,4 +1,4 @@
-namespace Eygaz
+﻿namespace Eygaz
 {
     partial class FrmAttendanceSessions
     {

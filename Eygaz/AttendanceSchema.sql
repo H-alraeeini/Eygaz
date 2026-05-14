@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS AttendanceSessions (
     ClassId     INTEGER NOT NULL,
     SubjectId   INTEGER NOT NULL,
     TeacherId   INTEGER NOT NULL,
+    Term        TEXT    NOT NULL DEFAULT 'First',
     SessionDate TEXT    NOT NULL,
     Notes       TEXT    DEFAULT '',
     CreatedAt   TEXT    DEFAULT (datetime('now','localtime')),
@@ -40,8 +41,8 @@ CREATE TABLE IF NOT EXISTS AttendanceSessions (
 );
 
 -- منع تكرار الجلسة لنفس الفصل والمادة في نفس التاريخ
-CREATE UNIQUE INDEX IF NOT EXISTS UQ_Session_Class_Subject_Date
-    ON AttendanceSessions (ClassId, SubjectId, SessionDate);
+CREATE UNIQUE INDEX IF NOT EXISTS UQ_Session_Class_Subject_Term_Date
+    ON AttendanceSessions (ClassId, SubjectId, Term, SessionDate);
 
 -- فهارس لتحسين الأداء
 CREATE INDEX IF NOT EXISTS IX_AttendanceSessions_ClassId    ON AttendanceSessions (ClassId);

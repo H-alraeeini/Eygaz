@@ -1,4 +1,4 @@
-namespace Eygaz
+﻿namespace Eygaz
 {
     partial class FrmAttendanceReports
     {
@@ -30,6 +30,8 @@ namespace Eygaz
             this.DtFrom = new System.Windows.Forms.DateTimePicker();
             this.lblDateTo = new System.Windows.Forms.Label();
             this.DtTo = new System.Windows.Forms.DateTimePicker();
+            this.BtnPrint = new System.Windows.Forms.Button();
+            this.BtnExport = new System.Windows.Forms.Button();
             this.BtnGenerate = new System.Windows.Forms.Button();
             this.GVReport = new DevExpress.XtraGrid.GridControl();
             this.GrdReport = new DevExpress.XtraGrid.Views.Grid.GridView();
@@ -41,6 +43,8 @@ namespace Eygaz
 
             // PnlFilter
             this.PnlFilter.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.PnlFilter.Controls.Add(this.BtnPrint);
+            this.PnlFilter.Controls.Add(this.BtnExport);
             this.PnlFilter.Controls.Add(this.BtnGenerate);
             this.PnlFilter.Controls.Add(this.DtTo);
             this.PnlFilter.Controls.Add(this.lblDateTo);
@@ -58,7 +62,7 @@ namespace Eygaz
             this.PnlFilter.Controls.Add(this.lblReportType);
             this.PnlFilter.Location = new System.Drawing.Point(11, 63);
             this.PnlFilter.Name = "PnlFilter";
-            this.PnlFilter.Size = new System.Drawing.Size(780, 105);
+            this.PnlFilter.Size = new System.Drawing.Size(780, 138);
 
             // Row 1
             this.lblReportType.AutoSize = true;
@@ -152,23 +156,48 @@ namespace Eygaz
             this.DtTo.Size = new System.Drawing.Size(105, 20);
             this.DtTo.TabIndex = 7;
 
+            this.BtnPrint.BackColor = System.Drawing.Color.SteelBlue;
+            this.BtnPrint.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.BtnPrint.Font = new System.Drawing.Font("Tahoma", 8F, System.Drawing.FontStyle.Bold);
+            this.BtnPrint.ForeColor = System.Drawing.Color.White;
+            this.BtnPrint.Location = new System.Drawing.Point(18, 78);
+            this.BtnPrint.Name = "BtnPrint";
+            this.BtnPrint.Size = new System.Drawing.Size(78, 26);
+            this.BtnPrint.TabIndex = 8;
+            this.BtnPrint.Text = "طباعة";
+            this.BtnPrint.UseVisualStyleBackColor = false;
+            this.BtnPrint.Click += new System.EventHandler(this.BtnPrint_Click);
+
+            this.BtnExport.BackColor = System.Drawing.Color.DarkOrange;
+            this.BtnExport.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.BtnExport.Font = new System.Drawing.Font("Tahoma", 8F, System.Drawing.FontStyle.Bold);
+            this.BtnExport.ForeColor = System.Drawing.Color.White;
+            this.BtnExport.Location = new System.Drawing.Point(102, 78);
+            this.BtnExport.Name = "BtnExport";
+            this.BtnExport.Size = new System.Drawing.Size(100, 26);
+            this.BtnExport.TabIndex = 9;
+            this.BtnExport.Text = "تصدير Excel";
+            this.BtnExport.UseVisualStyleBackColor = false;
+            this.BtnExport.Click += new System.EventHandler(this.BtnExport_Click);
+
             this.BtnGenerate.BackColor = System.Drawing.Color.MediumSeaGreen;
             this.BtnGenerate.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.BtnGenerate.Font = new System.Drawing.Font("Tahoma", 8F, System.Drawing.FontStyle.Bold);
             this.BtnGenerate.ForeColor = System.Drawing.Color.White;
-            this.BtnGenerate.Location = new System.Drawing.Point(80, 40);
+            this.BtnGenerate.Location = new System.Drawing.Point(210, 78);
             this.BtnGenerate.Name = "BtnGenerate";
-            this.BtnGenerate.Size = new System.Drawing.Size(110, 25);
+            this.BtnGenerate.Size = new System.Drawing.Size(110, 26);
+            this.BtnGenerate.TabIndex = 10;
             this.BtnGenerate.Text = "عرض التقرير";
             this.BtnGenerate.UseVisualStyleBackColor = false;
             this.BtnGenerate.Click += new System.EventHandler(this.BtnGenerate_Click);
 
             // GVReport
-            this.GVReport.Location = new System.Drawing.Point(2, 175);
+            this.GVReport.Location = new System.Drawing.Point(2, 208);
             this.GVReport.MainView = this.GrdReport;
             this.GVReport.Name = "GVReport";
             this.GVReport.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
-            this.GVReport.Size = new System.Drawing.Size(795, 535);
+            this.GVReport.Size = new System.Drawing.Size(795, 500);
             this.GVReport.ViewCollection.AddRange(new DevExpress.XtraGrid.Views.Base.BaseView[] { this.GrdReport });
 
             this.GrdReport.Appearance.HeaderPanel.Font = new System.Drawing.Font("Tahoma", 8F, System.Drawing.FontStyle.Bold);
@@ -188,11 +217,15 @@ namespace Eygaz
             this.GrdReport.OptionsView.ColumnAutoWidth = true;
             this.GrdReport.OptionsView.ShowGroupPanel = false;
             this.GrdReport.RowHeight = 28;
+            this.GrdReport.AppearancePrint.Row.Font = new System.Drawing.Font("Tahoma", 8F);
+            this.GrdReport.AppearancePrint.Row.Options.UseFont = true;
+            this.GrdReport.AppearancePrint.HeaderPanel.Font = new System.Drawing.Font("Tahoma", 8F, System.Drawing.FontStyle.Bold);
+            this.GrdReport.AppearancePrint.HeaderPanel.Options.UseFont = true;
 
             // FrmAttendanceReports
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(800, 720);
+            this.ClientSize = new System.Drawing.Size(800, 718);
             this.Controls.Add(this.GVReport);
             this.Controls.Add(this.PnlFilter);
             this.Name = "FrmAttendanceReports";
@@ -222,6 +255,8 @@ namespace Eygaz
         private System.Windows.Forms.DateTimePicker DtFrom;
         private System.Windows.Forms.Label lblDateTo;
         private System.Windows.Forms.DateTimePicker DtTo;
+        private System.Windows.Forms.Button BtnPrint;
+        private System.Windows.Forms.Button BtnExport;
         private System.Windows.Forms.Button BtnGenerate;
         private DevExpress.XtraGrid.GridControl GVReport;
         private DevExpress.XtraGrid.Views.Grid.GridView GrdReport;

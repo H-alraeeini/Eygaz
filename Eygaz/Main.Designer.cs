@@ -39,19 +39,20 @@ namespace Eygaz
             this.MenuOpt = new System.Windows.Forms.ToolStripMenuItem();
             this.MenuAttendanceStudent = new System.Windows.Forms.ToolStripMenuItem();
             this.MenuAttendanceSessions = new System.Windows.Forms.ToolStripMenuItem();
+            this.MenuGradeEntry = new System.Windows.Forms.ToolStripMenuItem();
             this.MenuAbsenceTracking = new System.Windows.Forms.ToolStripMenuItem();
             this.MenuAttendanceTechers = new System.Windows.Forms.ToolStripMenuItem();
             this.MenuCertificate = new System.Windows.Forms.ToolStripMenuItem();
             this.MenuCertDesigner = new System.Windows.Forms.ToolStripMenuItem();
             this.MenuGenerateCert = new System.Windows.Forms.ToolStripMenuItem();
-            this.MenuGradeEntry = new System.Windows.Forms.ToolStripMenuItem();
             this.MenuUserManagement = new System.Windows.Forms.ToolStripMenuItem();
             this.MenuPermissions = new System.Windows.Forms.ToolStripMenuItem();
             this.MenuReport = new System.Windows.Forms.ToolStripMenuItem();
             this.MenuAttandRep = new System.Windows.Forms.ToolStripMenuItem();
-            this.MenuGradeReport = new System.Windows.Forms.ToolStripMenuItem();
             this.MenuComprehensiveGradeReport = new System.Windows.Forms.ToolStripMenuItem();
+            this.MenuGradeReport = new System.Windows.Forms.ToolStripMenuItem();
             this.MenuDashboard = new System.Windows.Forms.ToolStripMenuItem();
+            this.MenuStudentReport = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -139,6 +140,13 @@ namespace Eygaz
             this.MenuAttendanceSessions.Text = "إدارة جلسات الحضور";
             this.MenuAttendanceSessions.Click += new System.EventHandler(this.MenuAttendanceSessions_Click);
             // 
+            // MenuGradeEntry
+            // 
+            this.MenuGradeEntry.Name = "MenuGradeEntry";
+            this.MenuGradeEntry.Size = new System.Drawing.Size(230, 22);
+            this.MenuGradeEntry.Text = "إدخال الدرجات";
+            this.MenuGradeEntry.Click += new System.EventHandler(this.MenuGradeEntry_Click);
+            // 
             // MenuAbsenceTracking
             // 
             this.MenuAbsenceTracking.Name = "MenuAbsenceTracking";
@@ -174,13 +182,6 @@ namespace Eygaz
             this.MenuGenerateCert.Text = "إصدار شهادة بقالب";
             this.MenuGenerateCert.Click += new System.EventHandler(this.MenuGenerateCert_Click);
             // 
-            // MenuGradeEntry
-            // 
-            this.MenuGradeEntry.Name = "MenuGradeEntry";
-            this.MenuGradeEntry.Size = new System.Drawing.Size(230, 22);
-            this.MenuGradeEntry.Text = "إدخال الدرجات";
-            this.MenuGradeEntry.Click += new System.EventHandler(this.MenuGradeEntry_Click);
-            // 
             // MenuUserManagement
             // 
             this.MenuUserManagement.Name = "MenuUserManagement";
@@ -200,7 +201,8 @@ namespace Eygaz
             this.MenuReport.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.MenuAttandRep,
             this.MenuComprehensiveGradeReport,
-            this.MenuGradeReport});
+            this.MenuGradeReport,
+            this.MenuStudentReport});
             this.MenuReport.Name = "MenuReport";
             this.MenuReport.Size = new System.Drawing.Size(57, 20);
             this.MenuReport.Text = "التقارير ";
@@ -212,19 +214,19 @@ namespace Eygaz
             this.MenuAttandRep.Text = "تقارير الحضور والغياب";
             this.MenuAttandRep.Click += new System.EventHandler(this.MenuAttandRep_Click);
             // 
-            // MenuGradeReport
-            // 
-            this.MenuGradeReport.Name = "MenuGradeReport";
-            this.MenuGradeReport.Size = new System.Drawing.Size(187, 22);
-            this.MenuGradeReport.Text = "كشف الدرجات تفصيلي";
-            this.MenuGradeReport.Click += new System.EventHandler(this.MenuGradeReport_Click);
-            // 
             // MenuComprehensiveGradeReport
             // 
             this.MenuComprehensiveGradeReport.Name = "MenuComprehensiveGradeReport";
             this.MenuComprehensiveGradeReport.Size = new System.Drawing.Size(187, 22);
             this.MenuComprehensiveGradeReport.Text = "كشف درجات شامل";
             this.MenuComprehensiveGradeReport.Click += new System.EventHandler(this.MenuComprehensiveGradeReport_Click);
+            // 
+            // MenuGradeReport
+            // 
+            this.MenuGradeReport.Name = "MenuGradeReport";
+            this.MenuGradeReport.Size = new System.Drawing.Size(187, 22);
+            this.MenuGradeReport.Text = "كشف الدرجات تفصيلي";
+            this.MenuGradeReport.Click += new System.EventHandler(this.MenuGradeReport_Click);
             // 
             // MenuDashboard
             // 
@@ -233,10 +235,19 @@ namespace Eygaz
             this.MenuDashboard.Text = "لوحة المتابعة";
             this.MenuDashboard.Click += new System.EventHandler(this.MenuDashboard_Click);
             // 
+            // MenuStudentReport
+            // 
+            this.MenuStudentReport.Name = "MenuStudentReport";
+            this.MenuStudentReport.Size = new System.Drawing.Size(187, 22);
+            this.MenuStudentReport.Text = "كشف الطلاب";
+            this.MenuStudentReport.Click += new System.EventHandler(this.MenuStudentReport_Click);
+            // 
             // Main
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.BackgroundImage = global::Eygaz.Properties.Resources.Pic;
+            this.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
             this.ClientSize = new System.Drawing.Size(830, 458);
             this.Controls.Add(this.menuStrip1);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
@@ -278,5 +289,6 @@ namespace Eygaz
         private System.Windows.Forms.ToolStripMenuItem MenuComprehensiveGradeReport;
         private System.Windows.Forms.ToolStripMenuItem MenuUserManagement;
         private System.Windows.Forms.ToolStripMenuItem MenuPermissions;
+        private System.Windows.Forms.ToolStripMenuItem MenuStudentReport;
     }
 }

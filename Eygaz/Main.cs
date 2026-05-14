@@ -23,6 +23,7 @@ namespace Eygaz
         FrmComprehensiveGradeReport frmComprehensiveGradeReport;
         FrmUserManagement frmUserManagement;
         FrmPermissionsManagement frmPermissionsManagement;
+        FrmStudentReport frmStudentReport;
 
         public Main()
         {
@@ -311,6 +312,21 @@ namespace Eygaz
             {
                 frmPermissionsManagement.BringToFront();
             }
+        }
+
+        private void MenuStudentReport_Click(object sender, EventArgs e)
+        {
+            if (frmStudentReport == null || frmStudentReport.IsDisposed)
+            {
+                frmStudentReport = new FrmStudentReport();
+                frmStudentReport.MdiParent = this;
+                frmStudentReport.Show();
+            }
+            else
+            {
+                frmStudentReport.BringToFront();
+            }
+
         }
     }
 }
